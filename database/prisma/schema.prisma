@@ -12,7 +12,6 @@ model User {
   username      String?  @unique
   email         String   @unique
   password      String?
-  projectIds    String[] @default([])
-  mongoUserId   String?
+  mongouserid   String?
   token         String?
 }

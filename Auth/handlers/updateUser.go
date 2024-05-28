@@ -22,33 +22,26 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedUser, err := UpdateUser(user)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	// Generate access and refresh tokens
 	accessTokenExpiration := time.Now().Add(24 * time.Hour)
 	refreshTokenExpiration := time.Now().Add(7 * 24 * time.Hour)
 
-	accessToken, err := generateToken(updatedUser.Username, accessTokenExpiration)
+	accessToken, err := generateToken(user.Username, accessTokenExpiration)
 	if err != nil {
 		http.Error(w, "Failed to generate access token", http.StatusInternalServerError)
 		return
 	}
 
-	refreshToken, err := generateToken(updatedUser.Username, refreshTokenExpiration)
+	refreshToken, err := generateToken(user.Username, refreshTokenExpiration)
 	if err != nil {
 		http.Error(w, "Failed to generate refresh token", http.StatusInternalServerError)
 		return
 	}
 
-	// Save the refresh token in the database
-	updatedUser.RefreshToken = refreshToken
-	updatedUser, err = UpdateUser(updatedUser)
+	user.RefreshToken = refreshToken
+	updatedUser, err := UpdateUser(user)
 	if err != nil {
-		http.Error(w, "Failed to save refresh token", http.StatusInternalServerError)
+		http.Error(w, "Failed to save update user", http.StatusInternalServerError)
 		return
 	}
 

@@ -7,7 +7,7 @@ import (
 func New() http.Handler {
 	mux := http.NewServeMux()
 
-	// OauthGoogle
+	mux.HandleFunc("/authorization", authorization)
 	mux.HandleFunc("/auth/google/login", oauthGoogleLoginHandler)
 	mux.HandleFunc("/auth/google/callback", oauthGoogleCallbackHandler)
 	mux.HandleFunc("/user/update", updateUserHandler)
