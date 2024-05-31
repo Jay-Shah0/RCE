@@ -10,10 +10,12 @@ import (
 )
 
 type Repl struct {
+	ID string `json:"id"`
 	OwnerID string `json:"ownerId"`
 	ReplName    string `json:"replName"`
 	ReplTempale string `json:"replTemplate"`
-}
+	IsPublic bool `json:"isPublic"`
+}	
 
 
 var Mongodb = connectMongoDB()
@@ -33,16 +35,19 @@ func CreateRepl(repl Repl) (Repl,error) {
 		"ownerID":Owner_objectID ,
 		"replName":repl.ReplName ,
 		"replTemplete":repl.ReplTempale ,
+		"isPublic":repl.IsPublic ,
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
     defer cancel()
 
-    _, err = mongoCollection.InsertOne(ctx, mongoRepl)
+    replObjectId, err := mongoCollection.InsertOne(ctx, mongoRepl)
     if err != nil {
 		return Repl{}, fmt.Errorf("failed to insert user: %v", err)
 	}
+
+	repl.ID = replObjectId.InsertedID.(primitive.ObjectID).Hex()
 	
 	return repl,nil
-
 }
+

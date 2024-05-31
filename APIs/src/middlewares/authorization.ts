@@ -18,7 +18,7 @@ const authenticateJWT = async (
 	const headers = { Authorization: `Bearer ${token}` };
 
 	try {
-		const response = await axios.get("http://localhost:3000/authorization", {
+		const response = await axios.get("http://localhost:8080/authorization", {
 			headers,
 		});
 
@@ -27,7 +27,6 @@ const authenticateJWT = async (
 		req.body.user = { id: userId };
 		next();
 	} catch (err) {
-		console.log(err);
 		next(new ApiError(403, "Invalid token."));
 	}
 };

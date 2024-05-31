@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from "express";
-import { proxyRequest } from "../utils/proxy";
 import { Repl, RequestWithProject } from "../types/project";
 import axios from "axios";
 

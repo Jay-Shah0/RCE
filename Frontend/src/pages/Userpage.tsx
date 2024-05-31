@@ -8,19 +8,15 @@ const Userpage: React.FC = () => {
 	const { user } = useContext(UserContext);
 
 	const handleSignInWithGoogle = () => {
-		window.location.href = "http://localhost:3000/auth/google/login";
+		window.location.href = "http://localhost:8080/auth/google/login";
 	};
 
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
-	const toggleSidebar = () => {
-		setIsSidebarOpen(!isSidebarOpen);
-	};
-
 	const [activeButton, setActiveButton] = useState<string | null>(null);
 
 	const handleButtonClick = (name: string) => {
-		setActiveButton(name); // Update active button state
+		setActiveButton(name); 
 	};
 
 	const renderContent = () => {
@@ -36,7 +32,9 @@ const Userpage: React.FC = () => {
 
 	return (
 		<div className="relative min-h-screen">
-			<Header toggleSidebar={toggleSidebar} />
+			<Header
+				toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+			/>
 			<Sidebar isOpen={isSidebarOpen} />
 			<div
 				className={`transition-all duration-300 pt-16 ${
@@ -75,7 +73,7 @@ const Userpage: React.FC = () => {
 									</div>
 								</div>
 								<div className="w-full md:w-2/3 flex flex-col">
-									<div className="flex border-b">
+									<div className="flex border-b gap-3">
 										<ButtonComponent
 											name="Public repls"
 											active={activeButton === "Button 1"}
@@ -116,8 +114,8 @@ const ButtonComponent: React.FC<{
 }> = ({ name, active, onClick }) => {
 	return (
 		<button
-			className={`
-                 text-white hover:bg-gray-800 focus:outline-none
+			className={`text-2xl bg-gray-700 border-b-2 rounded-t
+                  hover:bg-gray-500 focus:outline-none
                 ${active ? " border-b-blue-500" : ""}
             `}
 			onClick={onClick}

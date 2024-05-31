@@ -5,30 +5,31 @@ import Userformpage from "./pages/Userformpage";
 import { useContext, useEffect, useState } from "react";
 import { UserContext, UserContextState } from "./context/UserContext";
 import axios from "axios";
+import Replspage from "./pages/Replspage";
+import Deploypage from "./pages/Deploypage";
+import Teampage from "./pages/Teampage";
 
 function App() {
 	const { user, setUser } = useContext<UserContextState>(UserContext);
-	const [isFetching, setIsFetching] = useState(false); // State to prevent multiple API calls
+	const [isFetching, setIsFetching] = useState(false); 
 
 	const fetchUser = async (accessToken: string | null) => {
 		if (accessToken && !isFetching) {
-			setIsFetching(true); // Set fetching state to true
+			setIsFetching(true); 
 			try {
-				const response = await axios.get("http://localhost:3000/user/data", {
+				const response = await axios.get("http://localhost:8080/user/data", {
 					headers: { Authorization: `Bearer ${accessToken}` },
 				});
-				setUser(response.data.user); // Update user state directly in context
+				setUser(response.data.user);
 				console.log(response.data.user);
 			} catch (error) {
 				console.error("Error fetching user info:", error);
-				// Handle error (e.g., handle expired access token or display an error message)
 			} finally {
-				setIsFetching(false); // Reset fetching state
+				setIsFetching(false);
 			}
 		}
 	};
 
-	// Access user data from context if available
 	useEffect(() => {
 		const accessToken = localStorage.getItem("access_token");
 		if (accessToken && !user) {
@@ -41,9 +42,9 @@ function App() {
 			<Routes>
 				<Route path="/" element={<Homepage />} />
 				<Route path="/User" element={<Userpage />} />
-				<Route path="/repls" element={<Homepage />} />
-				<Route path="/deployments" element={<Homepage />} />
-				<Route path="/teams" element={<Homepage />} />
+				<Route path="/repls" element={<Replspage />} />
+				<Route path="/deployments" element={<Deploypage />} />
+				<Route path="/teams" element={<Teampage />} />
 				<Route path="/User/user" element={<Userformpage />} />
 			</Routes>
 		</Router>

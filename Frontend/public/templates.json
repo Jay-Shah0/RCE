@@ -1,0 +1,15 @@
+[
+  { "id": "1", "name": "Python", "details": "A general-purpose, high-level programming language known for its readability and ease of use. It's widely used in web development, data science, machine learning, and more." },
+  { "id": "2", "name": "JavaScript", "details": "A scripting language primarily used for web development. It enables interactive and dynamic web pages. JavaScript is also used in server-side development with Node.js and for building cross-platform mobile apps with frameworks like React Native." },
+  { "id": "3", "name": "Java", "details": "A general-purpose, object-oriented programming language known for its platform independence (write once, run anywhere). It's widely used in enterprise applications, web development, mobile apps (Android), and more." },
+  { "id": "4", "name": "C++", "details": "A general-purpose, high-performance programming language often used for system programming, game development, embedded systems, and performance-critical applications. It provides a balance between low-level control and high-level abstraction." },
+  { "id": "5", "name": "Rust", "details": "A systems programming language known for its memory safety, performance, and concurrency features. It's gaining traction in web development with frameworks like Rocket and webassembly." },
+  { "id": "6", "name": "Go", "details": "A compiled, concurrent, garbage-collected programming language designed for building efficient, scalable, and reliable software. It's popular for microservices, web development, and cloud applications." },
+  { "id": "7", "name": "Ruby", "details": "A general-purpose, interpreted programming language known for its developer productivity and ease of use. It's often used for web development with the Ruby on Rails framework." },
+  { "id": 10, "name": "Kotlin", "details": "A general-purpose programming language that is interoperable with Java and designed for Android app development. It's becoming increasingly popular for backend development as well." },
+  { "id": 11, "name": "PHP", "details": "A general-purpose scripting language primarily used for server-side web development. It powers a large portion of the web, especially content management systems like WordPress." },
+  { "id": 12, "name": "C#", "details": "A general-purpose, object-oriented programming language developed by Microsoft. It's widely used for building desktop applications, web services, and games with the Unity engine." },
+  { "id": 13, "name": "R", "details": "A programming language and software environment specifically designed for statistical computing and graphics. It's widely used in data science and machine learning." },
+  { "id": 14, "name": "Scala", "details": "A general-purpose, object-oriented programming language designed to address some of the limitations of Java. It's often used for building large-scale applications and distributed systems." },
+  { "id": 15, "name": "Perl", "details": "A general-purpose scripting language known for its flexibility and text processing capabilities. While still used in some legacy systems, its popularity has waned in recent years." }
+]

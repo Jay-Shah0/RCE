@@ -11,14 +11,12 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
 	return (
 		<div className="bg-gray-800 text-white p-4 flex items-center justify-between fixed w-full z-10">
-			{/* Toggle button */}
 			<button
 				onClick={toggleSidebar}
 				className="bg-blue-500 text-white p-2 rounded"
 			>
 				<FontAwesomeIcon icon={faBars} />
 			</button>
-			{/* Search input */}
 			<div className="flex items-center justify-center flex-grow">
 				<div className="max-w-[600px] w-full">
 					<input
@@ -28,10 +26,8 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
 					/>
 				</div>
 			</div>
-			{/* Profile icon */}
 			<div className="text-2xl ml-auto">
 				{" "}
-				{/* ml-auto to push it to the right */}
 				<Link to="/User">
 					<FontAwesomeIcon icon={faUser} />
 				</Link>
