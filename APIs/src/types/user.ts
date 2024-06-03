@@ -7,5 +7,6 @@ export interface RequestWithUser extends Request {
 }
 
 interface User {
-	id: string;
+	sqlId: string;
+	mongoId: string;
 }

@@ -22,9 +22,9 @@ const authenticateJWT = async (
 			headers,
 		});
 
-		const { userId } = response.data;
+		const { sqlId,mongoId } = response.data;
 
-		req.body.user = { id: userId };
+		req.body.user = { sqlId,mongoId };
 		next();
 	} catch (err) {
 		next(new ApiError(403, "Invalid token."));

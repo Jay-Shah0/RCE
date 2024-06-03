@@ -4,11 +4,14 @@ import { PopupContext, PopupContextState } from "./PopupContext";
 const PopupProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
-	const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
+	const [replPopup, setReplPopup] = useState<boolean>(false);
+	const [gitPopup, setGitPopup] = useState<boolean>(false);
 
 	const contextValue: PopupContextState = {
-		isPopupOpen,
-		setIsPopupOpen,
+		replPopup,
+		setReplPopup,
+		gitPopup,
+		setGitPopup,
 	};
 
 	return (

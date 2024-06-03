@@ -7,18 +7,10 @@ import (
 )
 
 func createReplHandler(w http.ResponseWriter, r *http.Request) {
-	var rawRequestBody map[string]json.RawMessage
-	err := json.NewDecoder(r.Body).Decode(&rawRequestBody)
+	var repl Repl
+	err := json.NewDecoder(r.Body).Decode(&repl)
 	if err != nil {
 		http.Error(w, "Error decoding request body", http.StatusBadRequest)
-		return
-	}
-
-	var repl Repl
-
-	err = json.Unmarshal(rawRequestBody["repl"], &repl)
-	if err != nil {
-		http.Error(w, "Error decoding 'repl' field", http.StatusBadRequest)
 		return
 	}
 
@@ -38,5 +30,4 @@ func createReplHandler(w http.ResponseWriter, r *http.Request) {
     return
   	}
 
-	w.WriteHeader(http.StatusCreated)
 }

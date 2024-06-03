@@ -1,11 +1,15 @@
 import { createContext } from "react";
 
 export interface PopupContextState {
-	isPopupOpen: boolean;
-	setIsPopupOpen: (isOpen: boolean) => void;
+	replPopup: boolean;
+	setReplPopup: (replPopup: boolean) => void;
+	gitPopup: boolean;
+	setGitPopup: (gitPopup: boolean) => void;
 }
 
 export const PopupContext = createContext<PopupContextState>({
-	isPopupOpen: false,
-	setIsPopupOpen: () => {},
+	replPopup: false,
+	setReplPopup: () => {},
+	gitPopup: false,
+	setGitPopup: () => {},
 });

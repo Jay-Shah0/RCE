@@ -2,10 +2,10 @@ import React, { useContext, useState } from "react";
 import { faGithub } from "@fortawesome/free-brands-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import Replspopup from "./Replspopup";
-import axios from "axios";
 import { PopupContext } from "@/context/PopupContext";
+import Githubpopup from "./Githubpopup";
 
 interface SidebarProps {
 	isOpen: boolean;
@@ -15,50 +15,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 	const navigate = useNavigate();
 	const [activeButton, setActiveButton] = useState<string | null>(null);
 
-	const { isPopupOpen, setIsPopupOpen } = useContext(PopupContext);
+	const { replPopup, setReplPopup, gitPopup, setGitPopup } = useContext(PopupContext);
 
-	const CreateRepl = async (
-		replTemplate: string,
-		replName: string,
-		isPublic: boolean
-	) => {
-		try {
-			// Retrieve access token from local storage
-			const accessToken = localStorage.getItem("access_token");
-
-			if (!accessToken) {
-				throw new Error("Access token not found in local storage");
-			}
-
-			// Prepare request body with repl details
-			const replData: {
-				repl: { replName: string; replTemplate: string; isPublic: boolean };
-			} = {
-				repl: {
-					replName: replTemplate,
-					replTemplate: replName,
-					isPublic: isPublic,
-				},
-			};
-
-			console.log(replData);
-
-			// Set headers with Bearer token for authentication
-			const headers = { Authorization: `Bearer ${accessToken}` };
-
-			// Send POST request using axios
-			const response = await axios.post(
-				"http://localhost:3000/api/repl/create",
-				replData,
-				{ headers }
-			);
-
-			// Handle successful response
-			console.log("Repl created successfully:", response.data);
-		} catch (error) {
-			console.error("Error creating repl:", error);
-		}
-	};
 
 	const handleButtonClick = (name: string) => {
 		setActiveButton(name);
@@ -77,21 +35,19 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 					<div className="mb-4 p-4">
 						<button
 							className="w-full px-4 py-2 mb-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none flex items-center justify-center"
-							onClick={() => setIsPopupOpen(true)}
+							onClick={() => setReplPopup(true)}
 						>
 							<FontAwesomeIcon icon={faPlus} className="mr-2" />
 							Create Repl
 						</button>
 						<button
 							className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none"
-							onClick={() => navigate("/github")}
+							onClick={() => setGitPopup(true)}
 						>
 							<FontAwesomeIcon icon={faGithub} className="mr-2" />
 							Import from GitHub
 						</button>
 					</div>
-
-					{/* New div for additional buttons */}
 					<div>
 						<a
 							href="#"
@@ -144,10 +100,14 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 					</div>
 				</div>
 			</div>
-			{isPopupOpen && (
+			{replPopup && (
 				<Replspopup
-					onClose={() => setIsPopupOpen(false)}
-					createRepl={CreateRepl}
+					onClose={() => setReplPopup(false)}
+				/>
+			)}
+			{gitPopup && (
+				<Githubpopup
+					onClose={() => setGitPopup(false)}
 				/>
 			)}
 		</>

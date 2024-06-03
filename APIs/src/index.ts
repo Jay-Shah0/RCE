@@ -4,6 +4,7 @@ import cors from "cors";
 import { errorHandler } from "./middlewares/errorHandler";
 import authenticateJWT from "./middlewares/authorization";
 import replRouter from "./routes/ReplRoute";
+import userRouter from "./routes/UserRoute";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -26,6 +27,7 @@ app.use(express.json());
 app.use(authenticateJWT);
 
 app.use("/api/repl",replRouter)
+app.use("api/user",userRouter)
 
 app.use(errorHandler);
 

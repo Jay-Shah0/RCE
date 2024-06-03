@@ -1,153 +1,204 @@
 package handlers
 
 import (
+	"auth/db"
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
-	_ "github.com/lib/pq"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type User struct {
   ID    string  `json:"id"`
+  MongoUserId string `json:"mongoUserId"`
   Email string `json:"email"`
   Username string `json:"username"`
   Password string `json:"password"`
-  MongoUserId string `json:"mongoUserId"`
   RefreshToken string `json:"token"`
 }
 
-var	db = connectSQLDB()
+type Repl struct {
+	Name string `json:"replName"`
+	Template string `json:"replTemplate"`
+	IsPublic bool `json:"isPublic"`
+}
 
 var Mongodb = connectMongoDB()
+var sqldb = connectPrismaDB()
+
 
 var	mongoDB = Mongodb.Database("RCE")
 var	mongoCollection = mongoDB.Collection("users")
 
-func AddUser( user User ) (string, error) {
-	var existingID string
-	var query string
+func AddUser(user User) (string, error) {
+    ctx := context.Background()
 
-	// Check if the user already exists by ID if provided
-	if user.ID != "" {
-		query = `SELECT id FROM "User" WHERE id = $1`
-		err := db.QueryRow(query, user.ID).Scan(&existingID)
-		if err != nil && err != sql.ErrNoRows {
-			return "", fmt.Errorf("failed to check if user exists by ID: %v", err)
-		}
-	} else {
-		// Check if the user already exists by email
-		query = `SELECT id FROM "User" WHERE email = $1`
-		err := db.QueryRow(query, user.Email).Scan(&existingID)
-		if err != nil && err != sql.ErrNoRows {
-			return "", fmt.Errorf("failed to check if user exists by email: %v", err)
-		}
-	}
+    // Check if the user already exists by ID if provided
+    existingUserByID, err := sqldb.User.FindUnique(
+        db.User.ID.Equals(user.ID),
+    ).Exec(ctx)
+    if err != nil && err != db.ErrNotFound {
+        return "", fmt.Errorf("failed to check if user exists by ID: %v", err)
+    }
 
-	// If the user already exists, return the existing ID
-	if existingID != "" {
-		fmt.Println("User already exists!")
-		return existingID, nil
-	}
+    // If the user already exists, return the existing ID
+    if existingUserByID != nil{
+        fmt.Println("User already exists!")
+        return existingUserByID.ID, nil
+    }
 
-	//creating User in mongodb
-	
-	mongoUser := bson.M{
-		"sqlUserId": user.ID,
-	}
-
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
-
+    // Creating User in MongoDB
+    mongoUser := bson.M{
+        "sqlUserId": user.ID,
+    }
     result, err := mongoCollection.InsertOne(ctx, mongoUser)
     if err != nil {
-		return "", fmt.Errorf("failed to insert user: %v", err)
-	}
+        return "", fmt.Errorf("failed to insert user: %v", err)
+    }
 
     // Extract the MongoDB user ID and update the user
-	user.MongoUserId = result.InsertedID.(primitive.ObjectID).Hex()
+    user.MongoUserId = result.InsertedID.(primitive.ObjectID).Hex()
 
-	// Creating user in SQLdb
-	query = `INSERT INTO "User" (id, email, username, password, mongouserid, token) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`
-	err = db.QueryRow(query, user.ID, user.Email, user.Username, user.Password, user.MongoUserId, user.RefreshToken).Scan(&user.ID)
-	if err != nil {
-		return "", fmt.Errorf("failed to insert user: %v", err)
-	}
+    // Creating user in SQLDB using Prisma client
+    createdUser, err := sqldb.User.CreateOne(
+        db.User.Mongouserid.Set(user.MongoUserId),
+        db.User.Username.Set(user.Username),
+        db.User.Email.Set(user.Email),
+		db.User.CreatedAt.Set(time.Now()),
+		db.User.UpdatedAt.Set(time.Now()),
+		db.User.ID.Set(user.ID),
+        db.User.Password.Set(user.Password),
+        db.User.Token.Set(user.RefreshToken),
+    ).Exec(ctx)
+    if err != nil {
+        return "", fmt.Errorf("failed to insert user: %v", err)
+    }
 
-	fmt.Println("User added successfully!")
-	return user.ID, nil
+    fmt.Println("User added successfully!")
+    return createdUser.ID, nil
 }
 
-func UpdateUser( user User) (User, error) {
-	var existingUser User
-	var mongoUserID string
+func UpdateUser(user User) (User, error) {
+    ctx := context.Background()
 
-	// Retrieve the existing user
-	err := db.QueryRow("SELECT id, email, username, password, mongouserid, token FROM \"User\" WHERE id = $1", user.ID).Scan(&existingUser.ID,&existingUser.Email, &existingUser.Username,&existingUser.Password,&mongoUserID,&existingUser.RefreshToken)
-	if err == sql.ErrNoRows {
-		return User{}, fmt.Errorf("user with id %s not found", user.ID)
-	}
-	
-	// Update the email, username, password, and refresh token if provided
-	if user.Email != "" {
-		existingUser.Email = user.Email
-	}
-	if user.Username != "" {
-		existingUser.Username = user.Username
-	}
-	if user.Password != "" {
-		existingUser.Password = user.Password
-	}
-	if user.RefreshToken != "" {
-		existingUser.RefreshToken = user.RefreshToken
-	}
+    // Retrieve the existing user from the database
+    existingUser, err := sqldb.User.FindUnique(
+        db.User.ID.Equals(user.ID),
+    ).Exec(ctx)
+    if err != nil {
+        return User{}, fmt.Errorf("failed to find existing user: %v", err)
+    }
+updatedUser := User{
+        ID:           existingUser.ID,
+        MongoUserId:  existingUser.Mongouserid,
+        Email:        existingUser.Email,
+        Username:     existingUser.Username,
+    }
 
-	objectID, err := primitive.ObjectIDFromHex(mongoUserID)
-	if err != nil {
-		return User{}, fmt.Errorf("failed to convert to ObjectID: %v", err)
-	}
+    // Handle the password and token fields properly
+    existingPassword, _ := existingUser.Password()
+    existingToken, _ := existingUser.Token()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
+    // Update only the non-empty fields from the user input
+    if user.Username != "" {
+        updatedUser.Username = user.Username
+    }
+    if user.Password != "" {
+        updatedUser.Password = user.Password
+    } else {
+        updatedUser.Password = existingPassword
+    }
+    if user.RefreshToken != "" {
+        updatedUser.RefreshToken = user.RefreshToken
+    } else {
+        updatedUser.RefreshToken = existingToken
+    }
 
-	filter := bson.M{"_id": objectID}
+    // Update the user in the database using UpdateOne
+	 _, err = sqldb.User.FindMany(
+        db.User.ID.Equals(user.ID),
+    ).Update(
+		db.User.Username.Set(updatedUser.Username),
+        db.User.Password.Set(updatedUser.Password),
+        db.User.Token.Set(updatedUser.RefreshToken),
+        db.User.UpdatedAt.Set(time.Now()),
+	).Exec(ctx)
 
-	update := bson.M{"$set": bson.M{"username": existingUser.Username}}
+    if err != nil {
+        return User{}, fmt.Errorf("failed to update user: %v", err)
+    }
 
-	_, err = mongoCollection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return User{}, fmt.Errorf("failed to update username: %v", err)
-	}
+    fmt.Println("User updated successfully!")
 
-	// Prepare the update statement with placeholders
-	stmt, err := db.Prepare(`UPDATE "User" SET email = $1, username = $2, password = $3, "token" = $4 WHERE id = $5`)
-	if err != nil {
-		return User{}, fmt.Errorf("failed to prepare update statement: %v", err)
-	}
-	defer stmt.Close() // Close the prepared statement when the function exits
-
-	// Execute the update statement
-	_, err = stmt.Exec(existingUser.Email, existingUser.Username, existingUser.Password, existingUser.RefreshToken, user.ID)
-	if err != nil {
-		return User{}, fmt.Errorf("failed to update user: %v", err)
-	}
-
-	fmt.Println("User updated successfully!")
-
-	return existingUser, nil
+    return updatedUser,nil
 }
 
 func getUserFromDB(username string) (User, error) {
     var user User
-    query := `SELECT id, email, username, password, MongoUserId, token FROM "User" WHERE username = $1`
-    err := db.QueryRow(query, username).Scan(&user.ID, &user.Email, &user.Username, &user.Password, &user.MongoUserId, &user.RefreshToken)
+
+	ctx := context.Background()
+
+    // Find the user by username using Prisma
+    foundUser, err := sqldb.User.FindFirst(
+        db.User.Username.Equals(username),
+    ).Exec(ctx)
     if err != nil {
         return user, err
     }
+
+    // Map the Prisma user to the custom User struct
+    user.ID = foundUser.ID
+    user.Email = foundUser.Email
+    user.Username = foundUser.Username
+    user.Password,_ = foundUser.Password()
+    user.MongoUserId = foundUser.Mongouserid
+    user.RefreshToken,_ = foundUser.Token()
+
     return user, nil
 }
 
 
+func getUserDataFromDB(username string) (User, []Repl, error) {
+    var user User
+    var repls []Repl
+
+    ctx := context.Background()
+
+    // Find the user by username using Prisma
+    foundUser, err := sqldb.User.FindFirst(
+        db.User.Username.Equals(username),
+    ).Exec(ctx)
+    if err != nil {
+        return user, repls, fmt.Errorf("error fetching user data: %w", err)
+    }
+
+    // Map the Prisma user to the custom User struct
+    user.ID = foundUser.ID
+    user.Email = foundUser.Email
+    user.Username = foundUser.Username
+    user.Password, _ = foundUser.Password()
+    user.MongoUserId = foundUser.Mongouserid
+    user.RefreshToken, _ = foundUser.Token()
+
+    // Find the user's repls using Prisma
+    foundRepls, err := sqldb.Repl.FindMany(
+        db.Repl.Userid.Equals(foundUser.ID),
+    ).Exec(ctx)
+    if err != nil {
+        return user, repls, fmt.Errorf("error querying user's repls: %w", err)
+    }
+
+    // Map the Prisma repls to the custom Repl struct
+    for _, foundRepl := range foundRepls {
+        repl := Repl{
+            Name:      foundRepl.Replname,
+            Template:  foundRepl.Repltemplate,
+            IsPublic:  foundRepl.Ispublic,
+        }
+        repls = append(repls, repl)
+    }
+
+    return user, repls, nil
+}

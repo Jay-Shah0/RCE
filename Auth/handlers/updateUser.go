@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 )
@@ -41,6 +42,7 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request) {
 	user.RefreshToken = refreshToken
 	updatedUser, err := UpdateUser(user)
 	if err != nil {
+		fmt.Print(err)
 		http.Error(w, "Failed to save update user", http.StatusInternalServerError)
 		return
 	}

@@ -10,14 +10,12 @@ import { PopupContext } from "@/context/PopupContext";
 const Homepage: React.FC = () => {
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
-	const { setIsPopupOpen } = useContext(PopupContext);
+	const { setReplPopup } = useContext(PopupContext);
 
 	return (
 		<div className="relative min-h-screen">
 			<Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-			<Sidebar
-				isOpen={isSidebarOpen}
-			/>
+			<Sidebar isOpen={isSidebarOpen} />
 			<div
 				className={`transition-all duration-300 pt-16 ${
 					isSidebarOpen ? "ml-64" : "ml-0"
@@ -27,7 +25,7 @@ const Homepage: React.FC = () => {
 					<div className="flex gap-6">
 						<button
 							className="w-30 px-4 py-2 mb-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 flex items-center justify-center"
-							onClick={() => setIsPopupOpen(true)}
+							onClick={() => setReplPopup(true)}
 						>
 							<FontAwesomeIcon icon={faPlus} className="mr-2" />
 							Create Repl

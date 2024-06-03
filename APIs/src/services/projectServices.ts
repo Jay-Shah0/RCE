@@ -16,7 +16,8 @@ export const createProject = async (
 		// Create the payload to be sent to the project service
 		const modifiedRepl: Repl = {
 			...repl,
-			ownerId: user.id,	
+			ownersqlId: user.sqlId,	
+			ownermongoId: user.mongoId
 		};
 
 		// Modify the request body
@@ -24,7 +25,7 @@ export const createProject = async (
 
 		console.log(req.body)
 
-		const microserviceRequestBody = req.body
+		const microserviceRequestBody = req.body.repl
 
 		 const response = await axios.post(
 				PROJECT_SERVICE_URL,
@@ -32,7 +33,6 @@ export const createProject = async (
 			);
 			res.status(response.status).send(response.data);
 	} catch (error) {
-		console.log(error);
 		next(error);
 	}
 };

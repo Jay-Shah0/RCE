@@ -35,7 +35,7 @@ func authorization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := getUserFromDB(username)
+	user, err := getUserFromDB(username);
 	if err != nil {
 		if err == sql.ErrNoRows {
 			http.Error(w, "User not found", http.StatusNotFound)
@@ -45,7 +45,11 @@ func authorization(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response := map[string]interface{}{"userId": user.MongoUserId}
+	response := map[string]interface{}{
+		"sqlId": user.ID,
+		"mongoId": user.MongoUserId,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
 }

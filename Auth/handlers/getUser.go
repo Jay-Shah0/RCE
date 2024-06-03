@@ -3,6 +3,7 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 )
@@ -35,15 +36,24 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    user, err := getUserFromDB(username)
+    user, repls, err := getUserDataFromDB(username)
     if err != nil {
         if err == sql.ErrNoRows {
             http.Error(w, "User not found", http.StatusNotFound)
         } else {
+            fmt.Print(err)
             http.Error(w, "Internal server error", http.StatusInternalServerError)
         }
         return
     }
+
+    replsMap := make(map[string]interface{})
+	for _, repl := range repls {
+		replsMap[repl.Name] = map[string]interface{}{
+			"template": repl.Template,
+			"isPublic": repl.IsPublic,
+		}
+	}
 
 	response := map[string]interface{}{
     "user": map[string]string{
@@ -51,6 +61,7 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
 		"email":    user.Email,
 		"username": user.Username,
 		},
+    "repls":  replsMap,
   	}
 
     w.Header().Set("Content-Type", "application/json")

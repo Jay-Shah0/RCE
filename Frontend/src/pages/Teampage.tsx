@@ -4,7 +4,7 @@ import React, { useState } from "react";
 
 const Teampage: React.FC = () => {
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-	const [isPopupOpen, setIsPopupOpen] = useState<boolean>(false);
+	const [replPopup, setReplPopup] = useState<boolean>(false);
 
 	const CreateRepl = async (
 		replTemplate: string,
@@ -52,13 +52,16 @@ const Teampage: React.FC = () => {
 	return (
 		<div className="relative min-h-screen">
 			<Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-			<Sidebar isOpen={isSidebarOpen} popUpCerateRepl={() => setIsPopupOpen(true)} />
+			<Sidebar
+				isOpen={isSidebarOpen}
+				popUpCerateRepl={() => setReplPopup(true)}
+			/>
 			<div
 				className={`transition-all duration-300 pt-16 ${
 					isSidebarOpen ? "ml-64" : "ml-0"
 				}`}
 			>
-				<div>Teampage</div>	
+				<div>Teampage</div>
 			</div>
 		</div>
 	);

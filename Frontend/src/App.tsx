@@ -34,7 +34,7 @@ function App() {
 		const accessToken = localStorage.getItem("access_token");
 		if (accessToken && !user) {
 			fetchUser(accessToken);
-		}
+		}	
 	}, []);
 
 	return (

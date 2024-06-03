@@ -1,15 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSearch, faTimes } from "@fortawesome/free-solid-svg-icons";
 import { SearchResultTemplates, Templates } from './replspopup/Templates';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import toastConfig from '@/utils/toastConfig';
+import { faGithub } from '@fortawesome/free-brands-svg-icons';
+import axios from 'axios';
+import { PopupContext } from '@/context/PopupContext';
+import { UserContext } from '@/context/UserContext';
 
-interface ReplspopupProps {
+interface popupProps {
   onClose: () => void;
-  createRepl: (replTemplate:string , replName:string , isPublic:boolean ) => void
 }
 
 interface Template {
@@ -18,9 +20,11 @@ interface Template {
 	details: string;
 }
 
-const Replspopup: React.FC<ReplspopupProps> = ({ onClose, createRepl }) => {
-	const navigate = useNavigate();
+const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 	const replNameRef = useRef<HTMLInputElement>(null);
+
+	const { setGitPopup } = useContext(PopupContext);
+	const { user } = useContext(UserContext);
 
 	const [searchTerm, setSearchTerm] = useState<string>("");
 	const [templates, setTemplates] = useState<Template[]>([]);
@@ -65,6 +69,11 @@ const Replspopup: React.FC<ReplspopupProps> = ({ onClose, createRepl }) => {
 	};
 
 	const configcheck = () => {
+
+		if (user === null) {
+			return;
+		}
+
 		if (replNameRef.current === null) {
 			return;
 		}
@@ -103,6 +112,53 @@ const Replspopup: React.FC<ReplspopupProps> = ({ onClose, createRepl }) => {
 		);
 	};
 
+	const createRepl = async (
+		replTemplate: string,
+		replName: string,
+		isPublic: boolean
+	) => {
+		try {
+			// Retrieve access token from local storage
+			const accessToken = localStorage.getItem("access_token");
+
+			if (!accessToken) {
+				throw new Error("Access token not found in local storage");
+			}
+
+			if (user === null) {
+				return;
+			}
+
+			// Prepare request body with repl details
+			const body: {
+				repl: { replName: string; replTemplate: string; isPublic: boolean };
+			} = {
+				repl: {
+					replName: replTemplate,
+					replTemplate: replName,
+					isPublic: isPublic,
+				},
+			};
+
+			console.log(body);
+
+			// Set headers with Bearer token for authentication
+			const headers = { Authorization: `Bearer ${accessToken}` };
+
+			// Send POST request using axios
+			const response = await axios.post(
+				"http://localhost:3000/api/repl/create",
+				body,
+				{ headers }
+			);
+
+			// Handle successful response
+			console.log("Repl created successfully:", response.data);
+		} catch (error) {
+			console.error("Error creating repl:", error);
+		}
+	};
+
 	useEffect(() => {
 		fetchTemplates();
 	}, []);
@@ -115,8 +171,9 @@ const Replspopup: React.FC<ReplspopupProps> = ({ onClose, createRepl }) => {
 					<div className="flex items-center gap-3">
 						<button
 							className="w-full px-4 py-2 rounded bg-blue-500 hover:bg-blue-600"
-							onClick={() => navigate("/github")}
+							onClick={() => setGitPopup(true)}
 						>
+							<FontAwesomeIcon icon={faGithub} className="mr-2" />
 							Import from GitHub
 						</button>
 						<button
@@ -129,7 +186,7 @@ const Replspopup: React.FC<ReplspopupProps> = ({ onClose, createRepl }) => {
 				</div>
 				<div className="grid grid-cols-1 h-5/6 md:grid-cols-2 gap-6">
 					<div>
-						<div className="text-1xl font-medium text-white mb-2">Template</div>
+						<div className="text-1xl font-medium mb-2">Template</div>
 						<div className="relative">
 							<input
 								type="text"
@@ -191,7 +248,7 @@ const Replspopup: React.FC<ReplspopupProps> = ({ onClose, createRepl }) => {
 							className="w-full p-2 mb-4 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
 							placeholder="Enter Repl Name"
 						/>
-						<div className='flex gap-6 mb-20'>
+						<div className="flex gap-6 mb-20">
 							<label className="inline-flex items-center text-white">
 								<input
 									type="radio"

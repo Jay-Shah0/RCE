@@ -8,11 +8,13 @@ export interface RequestWithProject extends Request {
 }
 
 interface User {
-	id: string;
+	sqlId: string;
+    mongoId: string;
 }
 
 export interface Repl{
-    ownerId: string
+    ownersqlId: string
+    ownermongoId: string
     replName: string
     replTemplete: string
 }

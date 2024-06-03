@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"auth/db"
 	"context"
-	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -44,25 +44,19 @@ func initGoogleOAuthConfig() (oauth2.Config) {
 	return googleOauthConfig
 }
 
-func connectSQLDB() (*sql.DB) {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatalf("Error loading .env file")
-		panic(err)
-	}
-	connectionString := os.Getenv("SOL_DATABASE_URL")
+func connectPrismaDB() (*db.PrismaClient) {
 
-	db, err := sql.Open("postgres", connectionString)
+	// ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	// defer cancel()
+
+	prismaClient := db.NewClient()
+	err := prismaClient.Connect()
 	if err != nil {
 		panic(err)
 	}
-	
-	if err := db.Ping(); err != nil {
-		panic(err)
-	}
-	
-	fmt.Println("Connected to database successfully!")
-	return db
+
+	log.Println("Connected to Prisma DB!")
+	return prismaClient
 }
 
 func connectMongoDB() (*mongo.Client) {
