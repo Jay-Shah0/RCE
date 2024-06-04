@@ -1,0 +1,36 @@
+// Replace "DATABASE_URL" with your actual environment variable
+datasource db {
+  provider = "postgresql"
+  url      = env("SOL_DATABASE_URL")
+}
+
+generator client {
+  provider = "go run github.com/steebchen/prisma-client-go"
+}
+
+model User {
+  id          String  @id @default(uuid()) @unique
+  mongouserid String  @unique
+  username    String?  @unique
+  email       String  @unique
+  password    String?
+  token       String?
+  repls       Repl[]  // One-to-many relationship with Repl
+  createdAt   DateTime @db.Timestamp
+  updatedAt   DateTime @db.Timestamp
+}
+
+model Repl {
+  id          String  @id @default(uuid()) @unique
+  mongoreplid String  @unique
+  replname    String
+  repltemplate String
+  ispublic    Boolean
+  userid      String
+  user        User    @relation(fields: [userid], references: [id])
+  createdAt   DateTime @db.Timestamp 
+  updatedAt   DateTime @db.Timestamp 
+
+  // Optional index for faster queries on user ID
+  @@index([userid])
+}

@@ -3,7 +3,6 @@ import React from "react";
 export interface User {
 	accessToken: string;
 	email: string;
-	id: string;
 	username: string;
 }
 

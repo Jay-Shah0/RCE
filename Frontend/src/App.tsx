@@ -8,9 +8,13 @@ import axios from "axios";
 import Replspage from "./pages/Replspage";
 import Deploypage from "./pages/Deploypage";
 import Teampage from "./pages/Teampage";
+import { ReplsContext, ReplsContextState } from "./context/ReplsContext";
 
 function App() {
 	const { user, setUser } = useContext<UserContextState>(UserContext);
+	const { setRepls } = useContext<ReplsContextState>(ReplsContext);
+
+
 	const [isFetching, setIsFetching] = useState(false); 
 
 	const fetchUser = async (accessToken: string | null) => {
@@ -21,7 +25,7 @@ function App() {
 					headers: { Authorization: `Bearer ${accessToken}` },
 				});
 				setUser(response.data.user);
-				console.log(response.data.user);
+				setRepls(response.data.repls);
 			} catch (error) {
 				console.error("Error fetching user info:", error);
 			} finally {
@@ -34,7 +38,7 @@ function App() {
 		const accessToken = localStorage.getItem("access_token");
 		if (accessToken && !user) {
 			fetchUser(accessToken);
-		}	
+		}
 	}, []);
 
 	return (

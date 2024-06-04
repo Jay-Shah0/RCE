@@ -1,8 +1,12 @@
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
-import React, { useState } from 'react'
+import { ReplsContext, ReplsContextState } from '@/context/ReplsContext';
+import React, { useContext, useState } from 'react'
 
 const Replspage : React.FC = () => {
+
+    const { repls } = useContext<ReplsContextState>(ReplsContext);
+
 
     const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
     

@@ -101,10 +101,6 @@ const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 			);
 			return;
 		}
-
-		console.log(replNameRef.current.value);
-		console.log(selectedTemplate.name);
-
 		createRepl(
 			replNameRef.current.value,
 			selectedTemplate.name,

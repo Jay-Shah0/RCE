@@ -20,9 +20,10 @@ type User struct {
 }
 
 type Repl struct {
-	Name string `json:"replName"`
-	Template string `json:"replTemplate"`
-	IsPublic bool `json:"isPublic"`
+	Name string 
+	Template string 
+	IsPublic bool 
+    UpdatedAt time.Time 
 }
 
 var Mongodb = connectMongoDB()
@@ -196,6 +197,7 @@ func getUserDataFromDB(username string) (User, []Repl, error) {
             Name:      foundRepl.Replname,
             Template:  foundRepl.Repltemplate,
             IsPublic:  foundRepl.Ispublic,
+            UpdatedAt: foundRepl.UpdatedAt,
         }
         repls = append(repls, repl)
     }

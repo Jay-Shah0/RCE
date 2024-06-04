@@ -18,6 +18,7 @@ type Repl struct {
 	ReplName    string `json:"replName"`
 	ReplTempale string `json:"replTemplate"`
 	IsPublic    bool   `json:"isPublic"`
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 var Mongodb = connectMongoDB()
@@ -66,6 +67,7 @@ func CreateRepl(repl Repl) (Repl, error) {
 		return Repl{}, fmt.Errorf("failed to insert repl into SQL: %v", err)
 	}
 
+	repl.UpdatedAt = createdRepl.UpdatedAt
 	repl.ID = createdRepl.ID
 
 	return repl, nil

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
 func getUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -47,23 +48,44 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    replsMap := make(map[string]interface{})
+    var replsSlice []map[string]interface{}
+
+	// Populate the slice with Repl objects
 	for _, repl := range repls {
-		replsMap[repl.Name] = map[string]interface{}{
-			"template": repl.Template,
-			"isPublic": repl.IsPublic,
-		}
+		replsSlice = append(replsSlice, map[string]interface{}{
+			"name":      repl.Name,
+			"template":  repl.Template,
+			"isPublic":  repl.IsPublic,
+            "updatedAt": howold(repl.UpdatedAt),
+		})
 	}
 
 	response := map[string]interface{}{
     "user": map[string]string{
-		"id":       user.ID,  
 		"email":    user.Email,
 		"username": user.Username,
 		},
-    "repls":  replsMap,
+    "repls":  replsSlice,
   	}
 
     w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(response)
+}
+
+
+func howold(entryTime time.Time) string {
+	now := time.Now()
+	duration := now.Sub(entryTime)
+
+	days := int(duration.Hours() / 24)
+
+	if days <= 7 {
+		if days == 0 {
+			return "last day"
+		}
+		return fmt.Sprintf("%d days ago", days)
+	}
+
+	weeks := int(days / 7)
+	return fmt.Sprintf("%d weeks ago", weeks)
 }
