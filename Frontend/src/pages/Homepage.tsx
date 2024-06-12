@@ -3,10 +3,10 @@ import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus } from "@fortawesome/free-solid-svg-icons";
-import Dropdown from "@/components/Dropdown";
-import Replbar from "@/components/Replbar";
 import { PopupContext } from "@/context/PopupContext";
 import { UserContext, UserContextState } from "@/context/UserContext";
+import Dropdown from "@/components/homepage/Dropdown";
+import Replbar from "@/components/homepage/Replbar";
 
 const Homepage: React.FC = () => {
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);

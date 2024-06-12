@@ -1,9 +1,10 @@
-	package handlers
+package handlers
 
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os/exec"
 )
 
 func createReplHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,12 +14,19 @@ func createReplHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error decoding request body", http.StatusBadRequest)
 		return
 	}
+	
 
 	// Insert project data into MongoDB
 	ReplData,err := CreateRepl(repl)
 	if err != nil {
 		fmt.Print(err)
 		http.Error(w, "Error inserting Repl into database", http.StatusInternalServerError)
+		return
+	}
+
+	err = startWorkerContainer(ReplData.MongoReplId)
+	if err != nil {
+		http.Error(w, "Error decoding request body", http.StatusBadRequest)
 		return
 	}
 
@@ -30,4 +38,19 @@ func createReplHandler(w http.ResponseWriter, r *http.Request) {
     return
   	}
 
+}
+
+func startWorkerContainer(replID string) error {
+	// Docker command to start a new worker container with the specified replID
+	cmd := exec.Command("docker", "run", "-d", "-e", fmt.Sprintf("REPL_ID=%s", replID), "worker-image")
+
+	// Run the command and capture the output
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("failed to start worker container: %v, output: %s", err, string(output))
+	}
+
+	// Print the container ID
+	fmt.Printf("Started worker container with ID: %s", string(output))
+	return nil
 }

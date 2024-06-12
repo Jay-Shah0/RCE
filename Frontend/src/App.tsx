@@ -9,6 +9,7 @@ import Replspage from "./pages/Replspage";
 import Deploypage from "./pages/Deploypage";
 import Teampage from "./pages/Teampage";
 import { ReplsContext, ReplsContextState } from "./context/ReplsContext";
+import Codingpage from "./pages/Codingpage";
 
 function App() {
 	const { user, setUser } = useContext<UserContextState>(UserContext);
@@ -45,6 +46,7 @@ function App() {
 		<Router>
 			<Routes>
 				<Route path="/" element={<Homepage />} />
+				<Route path="/Coding" element={<Codingpage />} />
 				<Route path="/User" element={<Userpage />} />
 				<Route path="/repls" element={<Replspage />} />
 				<Route path="/deployments" element={<Deploypage />} />
