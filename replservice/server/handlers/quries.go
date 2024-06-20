@@ -61,8 +61,6 @@ func CreateRepl(repl Repl) (Repl, error) {
 		db.Repl.CreatedAt.Set(time.Now()),
 		db.Repl.UpdatedAt.Set(time.Now()),
 	).Exec(ctx)
-
-
 	if err != nil {
 		return Repl{}, fmt.Errorf("failed to insert repl into SQL: %v", err)
 	}
@@ -73,6 +71,40 @@ func CreateRepl(repl Repl) (Repl, error) {
 	return repl, nil
 }
 
-func DeleteRepl(repl Repl) ( error) {
-	
+func DeleteRepl(repl Repl) ( error ) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	deletedRepl, err := sqldb.Repl.FindUnique(
+		db.Repl.ID.Equals(repl.ID),
+	).Delete().Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to delete repl from SQL: %v", err)
+	}
+
+	repl.MongoReplId = deletedRepl.Mongoreplid
+
+	Repl_objectID, err := primitive.ObjectIDFromHex(repl.MongoReplId)
+	if err != nil {
+		return  fmt.Errorf("failed to make objectId of Repl: %v", err)
+	}
+
+	Owner_objectID, err := primitive.ObjectIDFromHex(repl.OwnermongoId)
+	if err != nil {
+		return fmt.Errorf("failed to make objectId of Owner: %v", err)
+	}
+
+	mongoRepl := bson.M{
+		"_id":     Repl_objectID,
+		"ownerID":     Owner_objectID,
+	}
+
+	ReplData,err := mongoCollection.DeleteOne(ctx,mongoRepl)
+
+	if ReplData != nil {
+		return nil
+	}
+
+	return fmt.Errorf("failed to delete the repl in mongo")
 }

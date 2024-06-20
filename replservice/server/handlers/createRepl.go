@@ -30,7 +30,6 @@ func createReplHandler(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	err = json.NewEncoder(w).Encode(map[string]Repl{"repldata": ReplData})
-	
 	if err != nil {
     fmt.Fprintf(w, "Error encoding response: %v", err)
     w.WriteHeader(http.StatusInternalServerError)

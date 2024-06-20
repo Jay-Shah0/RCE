@@ -117,7 +117,6 @@ const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 		isPublic: boolean
 	) => {
 		try {
-			// Retrieve access token from local storage
 			const accessToken = localStorage.getItem("access_token");
 
 			if (!accessToken) {
@@ -128,7 +127,6 @@ const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 				return;
 			}
 
-			// Prepare request body with repl details
 			const body: {
 				repl: { replName: string; replTemplate: string; isPublic: boolean };
 			} = {
@@ -143,18 +141,17 @@ const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 
 			const headers = { Authorization: `Bearer ${accessToken}` };
 
-			// Send POST request using axios
 			const response = await axios.post(
 				"http://localhost:3000/api/repl/create",
 				body,
 				{ headers }
 			);
 
-			// Handle successful response
 			console.log("Repl created successfully:", response.data);
 			response.data.repldata.updatedAt = "just now"
+			
 			if(!repls){
-				setRepls([response.data]);
+				setRepls([response.data.repldata]);
 			}else{
 				setRepls([...repls, response.data.repldata]);
 			}

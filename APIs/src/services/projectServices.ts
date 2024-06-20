@@ -40,6 +40,8 @@ export const deleteProject = async (
 ) => {
 	const { user, repl } = req.body;
 
+	console.log(repl)
+
 	const modifiedRepl: Repl = {
 		...repl,
 		ownersqlId: user.sqlId,
@@ -49,7 +51,7 @@ export const deleteProject = async (
 	console.log(modifiedRepl);
 
 	const RequestBody = modifiedRepl;
-	const RequestURL = PROJECT_SERVICE_URL("delete	");
+	const RequestURL = PROJECT_SERVICE_URL("delete");
 
 	const response = await axios.post(RequestURL, RequestBody);
 

@@ -53,6 +53,7 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Populate the slice with Repl objects
 	for _, repl := range repls {
 		replsSlice = append(replsSlice, map[string]interface{}{
+            "id": repl.Id,
 			"replName":      repl.Name,
 			"replTemplate":  repl.Template,
 			"isPublic":  repl.IsPublic,

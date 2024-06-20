@@ -20,6 +20,7 @@ type User struct {
 }
 
 type Repl struct {
+    Id string
 	Name string 
 	Template string 
 	IsPublic bool 
@@ -196,6 +197,7 @@ func getUserDataFromDB(username string) (User, []Repl, error) {
     // Map the Prisma repls to the custom Repl struct
     for _, foundRepl := range foundRepls {
         repl := Repl{
+            Id: foundRepl.ID,
             Name:      foundRepl.Replname,
             Template:  foundRepl.Repltemplate,
             IsPublic:  foundRepl.Ispublic,

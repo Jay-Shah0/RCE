@@ -1,4 +1,5 @@
 import { ReplsContext, ReplsContextState } from "@/context/ReplsContext";
+import axios from "axios";
 import React, { useContext } from "react";
 
 const Replbar: React.FC = () => {
@@ -12,11 +13,39 @@ const Replbar: React.FC = () => {
 	);
 	}
 
-	const handleDelete = (id : string) => {
+	const handleDelete = async (id: string) => {
+		try {
+			const accessToken = localStorage.getItem("access_token");
 
-		
+			if (!accessToken) {
+				throw new Error("Access token not found in local storage");
+			}
 
-		setRepls(repls.filter((repl) => repl.id !== id));
+			const body: {
+				repl: { id: string };
+			} = {
+				repl: {
+					id: id,
+				},
+			};
+
+			console.log(body);
+
+			const headers = { Authorization: `Bearer ${accessToken}` };
+
+			// Send POST request using axios
+			const response = await axios.post(
+				"http://localhost:3000/api/repl/delete",
+				body,
+				{ headers }
+			);
+
+			console.log("Repl Deleted successfully:", response.data);
+
+			setRepls(repls.filter((repl) => repl.id !== id));
+		} catch (error) {
+			console.error("Error deleting repl:", error);
+		}
 	};
 
 	return (

@@ -13,6 +13,8 @@ interface User {
 }
 
 export interface Repl{
+    id: string
+    mongoReplId: string
     ownersqlId: string
     ownermongoId: string
     replName: string
