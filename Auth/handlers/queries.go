@@ -91,20 +91,22 @@ func UpdateUser(user User) (User, error) {
     if err != nil {
         return User{}, fmt.Errorf("failed to find existing user: %v", err)
     }
-updatedUser := User{
-        ID:           existingUser.ID,
-        MongoUserId:  existingUser.Mongouserid,
-        Email:        existingUser.Email,
-        Username:     existingUser.Username,
-    }
+    updatedUser := User{
+            ID:           existingUser.ID,
+            MongoUserId:  existingUser.Mongouserid,
+            Email:        existingUser.Email,
+        }
 
     // Handle the password and token fields properly
+    existingUsername,_ := existingUser.Username()
     existingPassword, _ := existingUser.Password()
     existingToken, _ := existingUser.Token()
 
     // Update only the non-empty fields from the user input
     if user.Username != "" {
         updatedUser.Username = user.Username
+    }else{
+        updatedUser.Username= existingUsername
     }
     if user.Password != "" {
         updatedUser.Password = user.Password
@@ -152,7 +154,7 @@ func getUserFromDB(username string) (User, error) {
     // Map the Prisma user to the custom User struct
     user.ID = foundUser.ID
     user.Email = foundUser.Email
-    user.Username = foundUser.Username
+    user.Username,_ = foundUser.Username()
     user.Password,_ = foundUser.Password()
     user.MongoUserId = foundUser.Mongouserid
     user.RefreshToken,_ = foundUser.Token()
@@ -178,7 +180,7 @@ func getUserDataFromDB(username string) (User, []Repl, error) {
     // Map the Prisma user to the custom User struct
     user.ID = foundUser.ID
     user.Email = foundUser.Email
-    user.Username = foundUser.Username
+    user.Username,_ = foundUser.Username()
     user.Password, _ = foundUser.Password()
     user.MongoUserId = foundUser.Mongouserid
     user.RefreshToken, _ = foundUser.Token()

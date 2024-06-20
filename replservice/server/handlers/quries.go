@@ -72,3 +72,7 @@ func CreateRepl(repl Repl) (Repl, error) {
 
 	return repl, nil
 }
+
+func DeleteRepl(repl Repl) ( error) {
+	
+}

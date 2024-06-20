@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os/exec"
 )
@@ -15,8 +16,6 @@ func createReplHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	
-
-	// Insert project data into MongoDB
 	ReplData,err := CreateRepl(repl)
 	if err != nil {
 		fmt.Print(err)
@@ -24,11 +23,11 @@ func createReplHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = startWorkerContainer(ReplData.MongoReplId)
-	if err != nil {
-		http.Error(w, "Error decoding request body", http.StatusBadRequest)
-		return
-	}
+	// err = startWorker(ReplData.MongoReplId)
+	// if err != nil {
+	// 	http.Error(w, "Error starting the repl worker", http.StatusInternalServerError)
+	// 	return
+	// }
 
 	err = json.NewEncoder(w).Encode(map[string]Repl{"repldata": ReplData})
 	
@@ -40,9 +39,9 @@ func createReplHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func startWorkerContainer(replID string) error {
+func  startWorker(replID string) error {
 	// Docker command to start a new worker container with the specified replID
-	cmd := exec.Command("docker", "run", "-d", "-e", fmt.Sprintf("REPL_ID=%s", replID), "worker-image")
+	cmd := exec.Command("docker", "run", "-d", "--network=repl-network", "--name", fmt.Sprintf("worker-%s", replID), "-e", fmt.Sprintf("REPL_ID=%s", replID), "go-based-worker")
 
 	// Run the command and capture the output
 	output, err := cmd.CombinedOutput()
@@ -51,6 +50,6 @@ func startWorkerContainer(replID string) error {
 	}
 
 	// Print the container ID
-	fmt.Printf("Started worker container with ID: %s", string(output))
+	log.Printf("Started worker container with ID: %s", string(output))
 	return nil
 }

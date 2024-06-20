@@ -10,7 +10,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
 	return (
-		<div className="bg-gray-800 text-white p-4 flex items-center justify-between fixed w-full z-10">
+		<div className="bg-gray-800 text-white p-4 flex items-center justify-between w-full h-[10vh]">
 			<button
 				onClick={toggleSidebar}
 				className="bg-blue-500 text-white p-2 rounded"

@@ -53,10 +53,10 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
 	// Populate the slice with Repl objects
 	for _, repl := range repls {
 		replsSlice = append(replsSlice, map[string]interface{}{
-			"name":      repl.Name,
-			"template":  repl.Template,
+			"replName":      repl.Name,
+			"replTemplate":  repl.Template,
 			"isPublic":  repl.IsPublic,
-            "updatedAt": howold(repl.UpdatedAt),
+            "updatedAt": howOld(repl.UpdatedAt),
 		})
 	}
 
@@ -73,11 +73,16 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 
-func howold(entryTime time.Time) string {
+func howOld(entryTime time.Time) string {
 	now := time.Now()
-	duration := now.Sub(entryTime)
+	duration := now.Sub(entryTime);
+    hours := int(duration.Hours())
 
-	days := int(duration.Hours() / 24)
+    if hours <= 2 {
+        return "just now"
+    }
+
+	days := int(hours / 24)
 
 	if days <= 7 {
 		if days == 0 {

@@ -1,4 +1,4 @@
-module websocket_server
+module worker
 
 go 1.22.3
 

@@ -1,35 +1,32 @@
+# Stage 1: Build the Go binary
+FROM golang:1.22.3 as builder
+
+# Set the Current Working Directory inside the builder container
+WORKDIR /app
+
+# Copy go.mod and go.sum files
+COPY go.mod go.sum ./
+
+# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
+RUN go mod download
+
+# Copy the source code into the builder container
+COPY . .
+
+# Build the Go binary
+RUN go build -o /repl/worker
+
+# Stage 2: Create a minimal image with the Go binary
 FROM ubuntu:22.04
 
-# Update package lists
-RUN apt-get update
+# Install essential tools
+RUN apt-get update && apt-get install -y curl wget git bash
 
-# Install essential tools including curl
-RUN apt-get install -y curl wget git bash
+# Copy the Go binary from the builder stage
+COPY --from=builder /repl/worker /repl/worker
 
-# Install Go toolchain of the desired version
-RUN curl -sL https://dl.google.com/go/go1.22.3.linux-amd64.tar.gz | tar -xzf - -C /usr/local
-
-# Add Go to PATH
-ENV PATH=/usr/local/go/bin:$PATH
-
-# Set working directory for Go build
+# Set the working directory
 WORKDIR /repl
 
-# Copy the Go application source code
-COPY websocketserver ./websocketserver
-
-WORKDIR /repl/websocketserver
-
-# Build the Go binary (use "./" for current directory)
-RUN go build -o /repl/websocket_server
-
-WORKDIR /repl
-
-# Delete the Go source code directory (after build)
-RUN rm -rf websocketserver
-
-# Expose port 8099
-EXPOSE 8099
-
-# Run the binary when the container starts
-ENTRYPOINT ["./websocket_server"]
+# Run the Go binary
+ENTRYPOINT ["./worker"]

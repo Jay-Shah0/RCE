@@ -26,7 +26,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 	return (
 		<>
 			<div
-				className={`fixed top-16 left-0 mt-4 h-full border-r-2 border-gray-300 transition-transform ${
+				className={`h-full bg-explorer-dark transition-transform ${
 					isOpen ? "transform translate-x-0" : "transform -translate-x-full"
 				}`}
 				style={{ width: "250px" }}
@@ -100,16 +100,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 					</div>
 				</div>
 			</div>
-			{replPopup && (
-				<Replspopup
-					onClose={() => setReplPopup(false)}
-				/>
-			)}
-			{gitPopup && (
-				<Githubpopup
-					onClose={() => setGitPopup(false)}
-				/>
-			)}
+			{replPopup && <Replspopup onClose={() => setReplPopup(false)} />}
+			{gitPopup && <Githubpopup onClose={() => setGitPopup(false)} />}
 		</>
 	);
 };

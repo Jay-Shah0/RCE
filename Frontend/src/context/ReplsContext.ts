@@ -6,8 +6,8 @@ interface Repl {
 	mongoReplId: string;
 	ownermongoId: string;
 	ownersqlId: string;
-	name: string;
-	template: string;
+	replName: string;
+	replTemplate: string;
 	updatedAt: string
 }
 

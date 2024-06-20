@@ -9,6 +9,7 @@ import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import axios from 'axios';
 import { PopupContext } from '@/context/PopupContext';
 import { UserContext } from '@/context/UserContext';
+import { ReplsContext, ReplsContextState } from '@/context/ReplsContext';
 
 interface popupProps {
   onClose: () => void;
@@ -23,8 +24,10 @@ interface Template {
 const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 	const replNameRef = useRef<HTMLInputElement>(null);
 
-	const { setGitPopup } = useContext(PopupContext);
 	const { user } = useContext(UserContext);
+	const { setGitPopup } = useContext(PopupContext);
+	const { repls, setRepls } = useContext<ReplsContextState>(ReplsContext);
+
 
 	const [searchTerm, setSearchTerm] = useState<string>("");
 	const [templates, setTemplates] = useState<Template[]>([]);
@@ -138,7 +141,6 @@ const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 
 			console.log(body);
 
-			// Set headers with Bearer token for authentication
 			const headers = { Authorization: `Bearer ${accessToken}` };
 
 			// Send POST request using axios
@@ -150,6 +152,13 @@ const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 
 			// Handle successful response
 			console.log("Repl created successfully:", response.data);
+			response.data.repldata.updatedAt = "just now"
+			if(!repls){
+				setRepls([response.data]);
+			}else{
+				setRepls([...repls, response.data.repldata]);
+			}
+
 		} catch (error) {
 			console.error("Error creating repl:", error);
 		}
