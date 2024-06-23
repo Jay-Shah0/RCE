@@ -10,6 +10,7 @@ import axios from 'axios';
 import { PopupContext } from '@/context/PopupContext';
 import { UserContext } from '@/context/UserContext';
 import { ReplsContext, ReplsContextState } from '@/context/ReplsContext';
+import { useNavigate } from 'react-router-dom';
 
 interface popupProps {
   onClose: () => void;
@@ -22,6 +23,7 @@ interface Template {
 }
 
 const Replspopup: React.FC<popupProps> = ({ onClose }) => {
+	const navigate = useNavigate();
 	const replNameRef = useRef<HTMLInputElement>(null);
 
 	const { user } = useContext(UserContext);
@@ -73,10 +75,6 @@ const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 
 	const configcheck = () => {
 
-		if (user === null) {
-			return;
-		}
-
 		if (replNameRef.current === null) {
 			return;
 		}
@@ -123,10 +121,6 @@ const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 				throw new Error("Access token not found in local storage");
 			}
 
-			if (user === null) {
-				return;
-			}
-
 			const body: {
 				repl: { replName: string; replTemplate: string; isPublic: boolean };
 			} = {
@@ -156,6 +150,8 @@ const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 				setRepls([...repls, response.data.repldata]);
 			}
 
+			const replId = response.data.repldata.id;
+			navigate(`/Coding?replId=${replId}`);
 		} catch (error) {
 			console.error("Error creating repl:", error);
 		}

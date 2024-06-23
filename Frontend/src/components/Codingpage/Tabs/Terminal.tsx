@@ -1,116 +1,66 @@
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
+import { Terminal } from "xterm";
+import { FitAddon } from "xterm-addon-fit";
+import "xterm/css/xterm.css";
 
+interface TerminalComponentProps {
+	termId: string;
+	data: string;
+}
 
-const Terminal: React.FC = () => {
-	const [output, setOutput] = useState<string[]>([]);
-	const [currentDir, setCurrentDir] = useState("/");
-	const [input, setInput] = useState<string>("");
+const TerminalComponent: React.FC<TerminalComponentProps> = ({
+	termId,
+	data,
+}) => {
 	const { socket } = useWebSocket();
 	const terminalRef = useRef<HTMLDivElement | null>(null);
-	
+	const terminalInstance = useRef<Terminal | null>(null);
+
+	const sendEvent = (action: string, cmd: string | null) => {
+		if (!socket) return;
+
+		const message = JSON.stringify({
+			event: "term",
+			data: { termId: termId, action: action, cmd: cmd },
+		});
+		socket.send(message);
+	};
 
 	useEffect(() => {
-		if (!socket) {
-			return
-		}
-		return () => {
-			socket.close();
-		};
-	}, []);
+		if (!socket || terminalInstance.current) return;
 
+		const terminal = new Terminal();
+		const fitAddon = new FitAddon();
+		terminal.loadAddon(fitAddon);
 
-	useEffect(() => {
 		if (terminalRef.current) {
-			terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
+			terminal.open(terminalRef.current);
+			fitAddon.fit();
+			terminalInstance.current = terminal;
 		}
-	}, [output]);
 
-	const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-		setInput(event.target.value);
-	};
+		sendEvent("start", null);
+
+		terminal.onData((data) => {
+			console.log("Terminal input:", data);
+			sendEvent("cmd", data);
+		});
+	}, [socket, termId]);
 
 	useEffect(() => {
-		if (!socket) {
-			return;
+		if (terminalInstance.current) {
+			console.log("Writing to terminal:", data);
+			terminalInstance.current.write(data);
 		}
-		socket.onmessage = (event) => {
-			console.log("Received message from WebSocket:", event.data);
-			const dataString = event.data;
-			let eventData;
-
-			try {
-				eventData = JSON.parse(dataString);
-			} catch (error) {
-				console.error("Error parsing JSON:", error);
-				return;
-			}
-
-			if (!("output" in eventData && "currentDir" in eventData)) {
-				console.error("Received data doesn't match EventData interface");
-				return;
-			}
-			console.log(eventData);
-			setOutput((prevMessages) => [...prevMessages, eventData.output]);
-			setCurrentDir(eventData.currentDir + "/");
-		};
-
-		socket.onerror = () => {
-			setOutput((prevMessages) => [
-				...prevMessages,
-				"Error: WebSocket connection failed",
-			]);
-		};
-
-		socket.onclose = () => {
-			setOutput((prevMessages) => [
-				...prevMessages,
-				"WebSocket connection closed",
-			]);
-		};
-	})
-	
-
-	const handleInputKeyPress = (
-		event: React.KeyboardEvent<HTMLInputElement>
-	) => {
-		if (event.key === "Enter" && input.trim() !== "") {
-			if (socket && socket.readyState === WebSocket.OPEN) {
-				socket.send(input);
-				setOutput((prevMessages) => [...prevMessages, `${currentDir + input}`]);
-				setInput("");
-			} else {
-				setOutput((prevMessages) => [
-					...prevMessages,
-					"Error: WebSocket connection is not open",
-				]);
-			}
-		}
-	};
+	}, [data]);
 
 	return (
-		<div
-			className="bg-black text-white font-mono p-4 h-[90vh] flex flex-col"
-			ref={terminalRef}
-		>
-			<div className="flex-grow overflow-y-auto">
-				{output.map((msg, index) => (
-					<div key={index} className="whitespace-pre-wrap break-words">
-						{msg}
-					</div>
-				))}
-				<span>{currentDir}</span>
-				<input
-					type="text"
-					value={input}
-					onChange={handleInputChange}
-					onKeyPress={handleInputKeyPress}
-					className="bg-transparent border-none text-white outline-none flex-grow"
-					autoFocus
-				/>
-			</div>
+		<div className="w-full h-screen bg-black text-white">
+			<div ref={terminalRef} className="h-full" />
 		</div>
 	);
 };
 
-export default Terminal;
+export default TerminalComponent;
+	

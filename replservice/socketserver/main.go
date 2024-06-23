@@ -71,7 +71,7 @@ func (server *WebSocketServer) handleClientConnections(w http.ResponseWriter, r 
             log.Printf("Error reading message: %v", err)
             break
         }
-		log.Printf("Received message from worker for replID %s: %s", replID, msg)
+		log.Printf("Received message from client for replID %s: %s", replID, msg)
 
         // Process the message using the stored replID
         server.routeToWorker(replID, msg)
@@ -101,7 +101,7 @@ func (server *WebSocketServer) handleWorkerConnections(w http.ResponseWriter, r 
 		return
 	}
 
-	err = json.Unmarshal(msg, &initialEvent)
+	err = json.Unmarshal(msg, &initialEvent)	
 	if err != nil {
 		log.Printf("Error unmarshalling replID: %v", err)
 		return

@@ -4,7 +4,7 @@ import axios from "axios";
 
 const PROJECT_SERVICE_URL = (route : string) => `http://localhost:8081/${route}`;
 
-export const createProject = async (
+export const createRepl = async (
 	req: RequestWithProject,
 	res: Response,
 	next: NextFunction
@@ -33,7 +33,7 @@ export const createProject = async (
 };
 
 
-export const deleteProject = async (
+export const deleteRepl = async (
 	req: RequestWithProject,
 	res: Response,
 	next: NextFunction
@@ -57,3 +57,60 @@ export const deleteProject = async (
 
 	res.status(response.status).send(response.data);
 }
+
+export const openRepl = async (
+	req: RequestWithProject,
+	res: Response,
+	next: NextFunction
+) => {
+	const { user, repl } = req.body;
+
+	console.log(repl);
+
+	const modifiedRepl: Repl = {
+		...repl,
+		ownersqlId: user.sqlId,
+		ownermongoId: user.mongoId,
+	};
+
+	console.log(modifiedRepl);
+
+	const RequestBody = modifiedRepl;
+	const RequestURL = PROJECT_SERVICE_URL("open");
+
+	const response = await axios.post(RequestURL, RequestBody);
+
+	res.status(response.status).send(response.data);
+};
+
+export const closeRepl = async (
+	req: RequestWithProject,
+	res: Response,
+	next: NextFunction
+) => {
+	const { user, repl } = req.body;
+
+	console.log(repl);
+
+	const modifiedRepl: Repl = {
+		...repl,
+		ownersqlId: user.sqlId,
+		ownermongoId: user.mongoId,
+	};
+
+	console.log(modifiedRepl);
+
+	const RequestBody = modifiedRepl;
+	const RequestURL = PROJECT_SERVICE_URL("close");
+
+	const response = await axios.post(RequestURL, RequestBody);
+
+	res.status(response.status).send(response.data);
+};
+
+
+
+
+
+
+

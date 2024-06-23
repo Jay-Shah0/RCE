@@ -1,11 +1,13 @@
 import { Router } from "express";
-import { createProject, deleteProject } from "../services/projectServices";
+import { closeRepl, createRepl, deleteRepl, openRepl } from "../services/replServices";
 
 const replRouter = Router();
 
 // Route to handle project creation
-replRouter.post("/create", createProject);
-replRouter.post("/delete", deleteProject)
+replRouter.post("/create", createRepl);
+replRouter.post("/delete", deleteRepl);
+replRouter.post("/open", openRepl);
+replRouter.post("/close", closeRepl);
 
 export default replRouter;
     

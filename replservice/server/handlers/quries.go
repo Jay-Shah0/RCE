@@ -71,17 +71,25 @@ func CreateRepl(repl Repl) (Repl, error) {
 	return repl, nil
 }
 
-func DeleteRepl(repl Repl) ( error ) {
+func DeleteRepl(repl Repl) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	deletedRepl, err := sqldb.Repl.FindUnique(
 		db.Repl.ID.Equals(repl.ID),
-	).Delete().Exec(ctx)
+	).Exec(ctx)
 	if err != nil {
-		return fmt.Errorf("failed to delete repl from SQL: %v", err)
+		return fmt.Errorf("failed to find repl from SQL: %v", err)
 	}
+
+	if (deletedRepl.Userid != repl.OwnerSQLID) {
+		return fmt.Errorf("no such repl for the user: %v", err)
+	}
+
+	deletedRepl, err = sqldb.Repl.FindUnique(
+		db.Repl.ID.Equals(repl.ID),
+	).Delete().Exec(ctx)
 
 	repl.MongoReplId = deletedRepl.Mongoreplid
 
@@ -107,4 +115,23 @@ func DeleteRepl(repl Repl) ( error ) {
 	}
 
 	return fmt.Errorf("failed to delete the repl in mongo")
+}
+
+func VerifyUser(repl Repl) (bool, error) {
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	ReplData, err := sqldb.Repl.FindUnique(
+		db.Repl.ID.Equals(repl.ID),
+	).Exec(ctx)
+	if err != nil {
+		return false,fmt.Errorf("failed to find repl from SQL: %v", err)
+	}
+
+	if (ReplData.Userid != repl.OwnerSQLID) {
+		return false,nil
+	}
+
+	return true,nil
 }

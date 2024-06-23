@@ -9,6 +9,8 @@ func New() http.Handler {
 
 	mux.HandleFunc("/create", createReplHandler)
 	mux.HandleFunc("/delete", deleteReplHandler)
-
+	mux.HandleFunc("/close", closeReplHandler)
+	mux.HandleFunc("/open", openReplHandler)
+	
 	return mux
 }
