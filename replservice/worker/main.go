@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -24,6 +25,18 @@ type TerminalEvent struct {
 	TermID string `json:"termId"`
 	Action string `json:"action"`
 	Cmd string `json:"cmd"`
+}
+
+type FileEvent struct {
+	Action   string   `json:"action"`
+    FilePath string   `json:"filePath,omitempty"`
+    Chunks   []string `json:"chunks,omitempty"`
+}
+
+type FileReturnMessage struct {
+	Event string `json:"event"`
+	Data string `json:"data"`
+	Chunk string `json:"chunk"`
 }
 
 type TerminalInstance struct {
@@ -70,12 +83,42 @@ func main() {
 				log.Println("Unmarshal error:", err)
 				continue
 			}
-			err = terminalHandler(ws, terminalEvent)	
+			err = terminalHandler(ws, terminalEvent)
+			if err != nil {
+				log.Println("termianal operation error:", err)
+				continue
+			}
+		}
+
+		if message.Event == "filetree"{
+			var filetreeEvent FileEvent
+			if err = json.Unmarshal(message.Data, &filetreeEvent); err != nil {
+				log.Println("Unmarshal error:", err)
+				continue
+			}
+			err = fileHandler(ws, filetreeEvent)
+			if err != nil {
+				log.Println("file operation error:", err)
+				continue
+			}
 		}
 	}
 }
 
-func terminalHandler(ws *websocket.Conn, event TerminalEvent) (err error) {
+func sendInitialEvent( ws *websocket.Conn,event InitialEvent) {
+	eventBytes, err := json.Marshal(event)
+	if err != nil {
+		log.Printf("Error marshalling event to JSON: %v", err)
+		return
+	}
+
+	err = ws.WriteMessage(websocket.TextMessage, eventBytes)
+	if err != nil {
+		log.Printf("Error sending Initial message: %v", err)
+	}
+}
+
+func terminalHandler(ws *websocket.Conn, event TerminalEvent) ( error) {
 	mu.Lock()
 	defer mu.Unlock()
 
@@ -110,8 +153,7 @@ func terminalHandler(ws *websocket.Conn, event TerminalEvent) (err error) {
 						"id": termID,
 						"output": string(buf[:n]),
 					}
-					msg, _ := json.Marshal(message)
-					if err := ws.WriteMessage(websocket.TextMessage, msg); err != nil {
+					if err := ws.WriteJSON(message); err != nil {
 						log.Println("Error writing to websocket:", err)
 						break
 					}
@@ -143,19 +185,82 @@ func terminalHandler(ws *websocket.Conn, event TerminalEvent) (err error) {
 	return nil
 }
 
+func fileHandler(ws *websocket.Conn, event FileEvent) ( error) {
+	if event.Action == "read" {
+            err :=readFile(ws, event.FilePath)
+			return err
+        }
+	if event.Action == "write" {
+            err :=writeFile(ws, event.FilePath, event.Chunks)
+			return err
+        }
+	
+	return nil;
+}
 
+func readFile(ws *websocket.Conn, filePath string) ( error){
+	var message FileReturnMessage
+	message.Event = "file"
+	
+    file, err := os.Open(filePath)
+    if err != nil {
+		message.Data = "error"
+		message.Chunk = err.Error()
+        ws.WriteJSON(message)
+        return err
+    }
+    defer file.Close()
 
-func sendInitialEvent( ws *websocket.Conn,event InitialEvent) {
-	eventBytes, err := json.Marshal(event)
-	if err != nil {
-		log.Printf("Error marshalling event to JSON: %v", err)
-		return
-	}
+    buffer := make([]byte, 1024)
+    for {
+        n, err := file.Read(buffer)
+        if err != nil && err != io.EOF {
+			message.Data = "error"
+			message.Chunk = err.Error()
+            ws.WriteJSON(message)
+            return err
+        }
+        if n == 0 {
+            break
+        }
+		message.Data = "fileChunk"
+		message.Chunk = string(buffer[:n])
+        ws.WriteJSON(message)
+    }
+	message.Data = "fileEnd"
+	message.Chunk = ""
 
-	err = ws.WriteMessage(websocket.TextMessage, eventBytes)
-	if err != nil {
-		log.Printf("Error sending Initial message: %v", err)
-	}
+    ws.WriteJSON(message)
+
+	return nil
+}
+
+func writeFile(ws *websocket.Conn, filePath string, chunks []string) ( error) {
+	var message FileReturnMessage
+	message.Event = "file"
+
+    file, err := os.Create(filePath)
+    if err != nil {
+		message.Data = "error"
+		message.Chunk = err.Error()
+		ws.WriteJSON(message)
+        return err
+    }
+    defer file.Close()
+
+    for _, chunk := range chunks {
+        _, err := file.Write([]byte(chunk))
+        if err != nil {
+			message.Data = "error"
+			message.Chunk = err.Error()
+			ws.WriteJSON(message)
+            return err
+        }
+    }
+	message.Data = "success"
+    ws.WriteJSON(message)
+
+	return nil
 }
 
 
