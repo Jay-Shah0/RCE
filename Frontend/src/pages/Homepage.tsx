@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -9,6 +9,7 @@ import Dropdown from "@/components/homepage/Dropdown";
 import Replbar from "@/components/homepage/Replbar";
 
 const Homepage: React.FC = () => {
+
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
 	const { setReplPopup } = useContext(PopupContext);

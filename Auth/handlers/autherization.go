@@ -30,10 +30,14 @@ func authorization(w http.ResponseWriter, r *http.Request) {
 	tokenStr := parts[1]
 
 	username, err := decodeToken(tokenStr)
-	if err != nil {
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
-		return
-	}
+    if err != nil {
+        if err.Error() == "token expired" {
+            http.Error(w, "Token expired", http.StatusUnauthorized)
+        } else {
+            http.Error(w, "Internal server error", http.StatusInternalServerError)
+        }
+        return
+    }
 
 	user, err := getUserFromDB(username);
 	if err != nil {

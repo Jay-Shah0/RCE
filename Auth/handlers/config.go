@@ -111,12 +111,20 @@ func decodeToken(tokenStr string) (string, error) {
     token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
         return jwtKey, nil
     })
+
     if err != nil {
-        return "", err
+        if ve, ok := err.(*jwt.ValidationError); ok {
+            if ve.Errors&jwt.ValidationErrorExpired != 0 {
+                return "", fmt.Errorf("token expired")
+            }
+        }
+        return "", err 
     }
+
     if !token.Valid {
         return "", fmt.Errorf("invalid token")
     }
+
     return claims.Username, nil
 }
 

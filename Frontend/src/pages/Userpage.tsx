@@ -46,7 +46,7 @@ const Userpage: React.FC = () => {
 						isSidebarOpen ? "ml-64" : "ml-0"
 					}`}
 				>
-					<div className="flex justify-center mt-8 text-white">
+					<div className="flex justify-center p-6 text-white">
 						<div className="w-full max-w-6xl">
 							{user ? (
 								<div className="flex flex-col md:flex-row mt-4 gap-x-10">

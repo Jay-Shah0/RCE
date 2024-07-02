@@ -34,21 +34,27 @@ var sqldb = connectPrismaDB()
 var	mongoDB = Mongodb.Database("RCE")
 var	mongoCollection = mongoDB.Collection("users")
 
-func AddUser(user User) (string, error) {
+func AddUser(user User) (usernameORid string,userExist bool,err error) {
     ctx := context.Background()
 
     // Check if the user already exists by ID if provided
-    existingUserByID, err := sqldb.User.FindUnique(
+    existingUser, err := sqldb.User.FindUnique(
         db.User.ID.Equals(user.ID),
     ).Exec(ctx)
     if err != nil && err != db.ErrNotFound {
-        return "", fmt.Errorf("failed to check if user exists by ID: %v", err)
+        return "",false , fmt.Errorf("failed to check if user exists by ID: %v", err)
     }
 
     // If the user already exists, return the existing ID
-    if existingUserByID != nil{
+    if existingUser != nil{
         fmt.Println("User already exists!")
-        return existingUserByID.ID, nil
+        username,IsUsernameExist := existingUser.Username()
+
+        if(IsUsernameExist){
+            return username, IsUsernameExist, nil
+        }else{
+            return existingUser.ID, !IsUsernameExist, nil
+        }
     }
 
     // Creating User in MongoDB
@@ -57,7 +63,7 @@ func AddUser(user User) (string, error) {
     }
     result, err := mongoCollection.InsertOne(ctx, mongoUser)
     if err != nil {
-        return "", fmt.Errorf("failed to insert user: %v", err)
+        return "", false, fmt.Errorf("failed to insert user: %v", err)
     }
 
     // Extract the MongoDB user ID and update the user
@@ -75,11 +81,11 @@ func AddUser(user User) (string, error) {
         db.User.Token.Set(user.RefreshToken),
     ).Exec(ctx)
     if err != nil {
-        return "", fmt.Errorf("failed to insert user: %v", err)
+        return "", false, fmt.Errorf("failed to insert user: %v", err)
     }
 
     fmt.Println("User added successfully!")
-    return createdUser.ID, nil
+    return createdUser.ID, false, nil
 }
 
 func UpdateUser(user User) (User, error) {
@@ -197,7 +203,7 @@ func getUserDataFromDB(username string) (User, []Repl, error) {
     // Map the Prisma repls to the custom Repl struct
     for _, foundRepl := range foundRepls {
         repl := Repl{
-            Id: foundRepl.ID,
+            Id:        foundRepl.ID,
             Name:      foundRepl.Replname,
             Template:  foundRepl.Repltemplate,
             IsPublic:  foundRepl.Ispublic,

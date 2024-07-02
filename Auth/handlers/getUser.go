@@ -28,12 +28,16 @@ func getUserHandler(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Assuming the token is prefixed with "Bearer "
     tokenStr = strings.TrimPrefix(tokenStr, "Bearer ")
 
     username, err := decodeToken(tokenStr)
     if err != nil {
-        http.Error(w, "Invalid token", http.StatusUnauthorized)
+        if err.Error() == "token expired" {
+            http.Error(w, "Token expired", http.StatusUnauthorized)
+        } else {
+            fmt.Println("Error decoding token:", err)
+            http.Error(w, "Internal server error", http.StatusInternalServerError)
+        }
         return
     }
 

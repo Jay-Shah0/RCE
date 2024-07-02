@@ -13,20 +13,14 @@ RUN go mod download
 # Copy the source code into the builder container
 COPY . .
 
-# Build the Go binary
+# Build the Go binary (place the binary in the /repl directory)
 RUN go build -o /repl/worker
 
 # Stage 2: Create a minimal image with the Go binary
 FROM ubuntu:22.04
 
-# Install essential tools
-RUN apt-get update && apt-get install -y curl wget git bash
-
 # Copy the Go binary from the builder stage
-COPY --from=builder /repl/worker /repl/worker
+COPY --from=builder /repl/worker /repl/workerz
 
-# Set the working directory
-WORKDIR /repl
-
-# Run the Go binary
-ENTRYPOINT ["./worker"]
+# Set the working directory to /root
+WORKDIR /root

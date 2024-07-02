@@ -63,18 +63,38 @@ func oauthGoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id,err := AddUser(*user)
-
+	id,UserExist,err := AddUser(*user)
 	if err != nil {
 		log.Println("error inserting user in database:", err)
 		http.Redirect(w, r, getFrontendURL(r), http.StatusTemporaryRedirect)
 		return
 	}
 
-	
+	if (UserExist) {
+		username := id;
 
-	redirectURL := getFrontendURL(r) + "User/user?id=" + url.QueryEscape(id)
-	http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
+		accessTokenExpiration := time.Now().Add(24 * time.Hour)
+
+		accessToken, err := generateToken(username, accessTokenExpiration)
+		if err != nil {
+			http.Error(w, "Failed to generate access token", http.StatusInternalServerError)
+			return
+		}
+
+		cookie := &http.Cookie{
+        Name:     "access_token",
+        Value:    accessToken,
+        Path:     "/",
+    	}
+
+		http.SetCookie(w, cookie)
+
+		redirectURL := getFrontendURL(r)
+		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
+	}else{
+		redirectURL := getFrontendURL(r) + "User/user?id=" + url.QueryEscape(id)
+		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
+	}
 }
 
 func generateStateOauthCookie(w http.ResponseWriter) string {

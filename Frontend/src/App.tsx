@@ -10,6 +10,7 @@ import Deploypage from "./pages/Deploypage";
 import Teampage from "./pages/Teampage";
 import { ReplsContext, ReplsContextState } from "./context/ReplsContext";
 import Codingpage from "./pages/Codingpage";
+import Cookies from "js-cookie";
 
 function App() {
 	const { user, setUser } = useContext<UserContextState>(UserContext);
@@ -36,7 +37,16 @@ function App() {
 	};
 
 	useEffect(() => {
-		const accessToken = localStorage.getItem("access_token");
+		let accessToken = localStorage.getItem("access_token");
+		if(!accessToken){
+			const token = Cookies.get("access_token");
+			if(token){
+				accessToken = token;
+
+				localStorage.setItem("access_token", token);
+			}
+			Cookies.remove("access_token");
+		}
 		if (accessToken && !user) {
 			fetchUser(accessToken);
 		}

@@ -54,7 +54,7 @@ func updateUserHandler(w http.ResponseWriter, r *http.Request) {
 		Expires:  refreshTokenExpiration,
 		HttpOnly: true,
 		Path:     "/",
-		Secure:   true, // Use secure flag for HTTPS
+		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 	})
 
