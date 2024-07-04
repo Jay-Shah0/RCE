@@ -15,7 +15,7 @@ func closeReplHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isUser,err := VerifyUser(repl)
+	_,isUser,err := VerifyUser(repl)
 	
 	if(!isUser){
 		http.Error(w, "User not having the Repl", http.StatusConflict)

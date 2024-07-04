@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the virtual environment directory (relative to /root)
-VENV_DIR="venv"
+VENV_DIR=".venv"
 
 # Create the virtual environment in the specified directory if it doesn't exist
 if [ ! -d "$VENV_DIR" ]; then

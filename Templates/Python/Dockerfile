@@ -15,11 +15,15 @@ RUN chmod +x /venvsetup.sh
 # Run the entrypoint script to setup venv and delete itself
 RUN /venvsetup.sh && rm /venvsetup.sh
 
-VOLUME [ "/root/venv" ]
+VOLUME [ "/root/.venv" ]
 
-# CMD ["/repl/worker"]
+WORKDIR /
 
-WORKDIR /root
+COPY rename_project.sh /rename_project.sh
+RUN chmod +x /rename_project.sh
+
+CMD ["/bin/bash", "-c", "/rename_project.sh && exec /repl/worker"]
+
 
 
 

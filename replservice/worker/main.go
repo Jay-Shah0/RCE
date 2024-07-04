@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 
 	"github.com/creack/pty"
@@ -30,10 +32,23 @@ type TerminalEvent struct {
 type FileEvent struct {
 	Action   string   `json:"action"`
     FilePath string   `json:"filePath,omitempty"`
+	IsDir bool   `json:"isDir"`
     Chunks   []string `json:"chunks,omitempty"`
 }
 
+type FileTreeInfo struct {
+    Name  string `json:"name"`
+    Path  string `json:"path"`
+    IsDir bool   `json:"isDir"`
+}
+
 type FileReturnMessage struct {
+	Event string `json:"event"`
+	DataType string `json:"dataType"`
+	Data string `json:"data"`
+}
+
+type FileReadMessage struct {
 	Event string `json:"event"`
 	Data string `json:"data"`
 	Chunk string `json:"chunk"`
@@ -46,6 +61,7 @@ type TerminalInstance struct {
 
 var terminals = make(map[string]*TerminalInstance)
 var mu sync.Mutex
+
 
 
 func main() {
@@ -186,20 +202,102 @@ func terminalHandler(ws *websocket.Conn, event TerminalEvent) ( error) {
 }
 
 func fileHandler(ws *websocket.Conn, event FileEvent) ( error) {
-	if event.Action == "read" {
-            err :=readFile(ws, event.FilePath)
-			return err
-        }
-	if event.Action == "write" {
-            err :=writeFile(ws, event.FilePath, event.Chunks)
-			return err
-        }
-	
+
+	projectDir := os.Getenv("PROJECT_DIR")
+    if projectDir == "" {
+        return fmt.Errorf("Not set env variable of ProjectDir")
+    }
+
+	event.FilePath = projectDir + event.FilePath
+
+	switch event.Action {
+	case "open" :
+		err := openFileTree(ws)
+		return err
+	case "read" :
+		err := readFile(ws, event.FilePath)
+		return err
+	case "write" :
+		err := writeFile(ws, event.FilePath, event.Chunks)
+		return err
+	case "create" :
+		err := createFileOrDir(ws, event.FilePath, event.IsDir)
+		return err
+	case "delete" :
+		err := deleteFile(ws, event.FilePath)
+		return err
+	}
 	return nil;
 }
 
+
+func openFileTree(ws *websocket.Conn) (err error) {
+
+    projectDir := os.Getenv("PROJECT_DIR")
+    if projectDir == "" {
+        return err
+    }
+
+    // Validate path (consider adding a check for root privileges here)
+    if _, err := os.Stat(projectDir); os.IsNotExist(err) {
+        return err
+    }
+
+    // Define a slice to hold FileInfo structs
+    fileInfo := []FileTreeInfo{}
+
+    // Recursively walk the directory tree (use with caution for subdirectories within /root!)
+    err = filepath.Walk(projectDir, func(path string, info os.FileInfo, err error) error {
+        if err != nil {
+            return err
+        }
+        
+        // Skip the root path itself
+        if path == projectDir {
+            return nil
+        }
+
+        // Get the relative path
+        relativePath, err := filepath.Rel(projectDir, path)
+        if err != nil {
+            return err
+        }
+
+        fileInfo = append(fileInfo, FileTreeInfo{
+            Name:  filepath.Base(path),
+            Path:  relativePath,
+            IsDir: info.IsDir(),
+        })
+        return nil
+    })
+
+    if err != nil {
+        return err
+    }
+
+    data := map[string]interface{}{
+        "event": "filetree",
+        "files": fileInfo,
+    }
+
+    // Marshal FileInfo slice to JSON
+    dataBytes, err := json.Marshal(data)
+    if err != nil {
+        return err
+    }
+
+    // Send the JSON data as a WebSocket message
+    err = ws.WriteMessage(websocket.TextMessage, dataBytes)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+
 func readFile(ws *websocket.Conn, filePath string) ( error){
-	var message FileReturnMessage
+	var message FileReadMessage
 	message.Event = "file"
 	
     file, err := os.Open(filePath)
@@ -239,10 +337,17 @@ func writeFile(ws *websocket.Conn, filePath string, chunks []string) ( error) {
 	var message FileReturnMessage
 	message.Event = "file"
 
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+        message.DataType = "error"
+		message.Data = "File does not exist"
+		ws.WriteJSON(message)
+        return err
+    }
+
     file, err := os.Create(filePath)
     if err != nil {
-		message.Data = "error"
-		message.Chunk = err.Error()
+		message.DataType = "error"
+		message.Data = err.Error()
 		ws.WriteJSON(message)
         return err
     }
@@ -251,13 +356,77 @@ func writeFile(ws *websocket.Conn, filePath string, chunks []string) ( error) {
     for _, chunk := range chunks {
         _, err := file.Write([]byte(chunk))
         if err != nil {
-			message.Data = "error"
-			message.Chunk = err.Error()
+			message.DataType = "error"
+			message.Data = err.Error()
 			ws.WriteJSON(message)
             return err
         }
     }
-	message.Data = "success"
+	message.DataType = "success"
+	message.Data = ""
+    ws.WriteJSON(message)
+
+	return nil
+}
+
+func createFileOrDir(ws *websocket.Conn, path string, isDir bool) error {
+    var message FileReturnMessage
+    message.Event = "filetree"
+
+    if isDir {
+        // Create directory
+        err := os.MkdirAll(path, os.ModePerm)
+        if err != nil {
+            message.DataType = "error"
+            message.Data = err.Error()
+            ws.WriteJSON(message)
+            return err
+        }
+    } else {
+        // Create file
+        dir := filepath.Dir(path)
+        if _, err := os.Stat(dir); os.IsNotExist(err) {
+            os.MkdirAll(dir, os.ModePerm)
+        }
+
+        file, err := os.Create(path)
+        if err != nil {
+            message.DataType = "error"
+            message.Data = err.Error()
+            ws.WriteJSON(message)
+            return err
+        }
+        file.Close()
+    }
+
+    message.DataType = "success"
+    message.Data = ""
+    ws.WriteJSON(message)
+
+    return nil
+}
+
+
+func deleteFile(ws *websocket.Conn, filePath string) ( error ) {
+	var message FileReturnMessage
+	message.Event = "filetree"
+
+    if _, err := os.Stat(filePath); os.IsNotExist(err) {
+        message.DataType = "error"
+		message.Data = err.Error()
+		ws.WriteJSON(message)
+		return err
+    }
+
+    err := os.Remove(filePath)
+    if err != nil {
+        message.DataType = "error"
+		message.Data = err.Error()
+		ws.WriteJSON(message)
+		return err
+    }
+	message.DataType = "success"
+	message.Data = ""
     ws.WriteJSON(message)
 
 	return nil

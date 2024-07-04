@@ -15,14 +15,14 @@ func openReplHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isUser,err := VerifyUser(repl)
+	Replname, isUser,err := VerifyUser(repl)
 	
 	if(!isUser){
 		http.Error(w, "User not having the Repl", http.StatusConflict)
 		return
 	}
 
-	err = container.StartWorker(repl.ID)
+	err = container.StartWorker(repl.ID, Replname)
 	if err != nil {
 		fmt.Print(err)
 		http.Error(w, "Error stoping Repl Worker", http.StatusInternalServerError)

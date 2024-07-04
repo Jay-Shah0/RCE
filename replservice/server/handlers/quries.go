@@ -117,7 +117,7 @@ func DeleteRepl(repl Repl) error {
 	return fmt.Errorf("failed to delete the repl in mongo")
 }
 
-func VerifyUser(repl Repl) (bool, error) {
+func VerifyUser(repl Repl) (string, bool, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -126,12 +126,12 @@ func VerifyUser(repl Repl) (bool, error) {
 		db.Repl.ID.Equals(repl.ID),
 	).Exec(ctx)
 	if err != nil {
-		return false,fmt.Errorf("failed to find repl from SQL: %v", err)
+		return "", false,fmt.Errorf("failed to find repl from SQL: %v", err)
 	}
 
 	if (ReplData.Userid != repl.OwnerSQLID) {
-		return false,nil
+		return "", false,fmt.Errorf("Not User of Repl: %v", err)
 	}
 
-	return true,nil
+	return ReplData.Replname, true,nil
 }

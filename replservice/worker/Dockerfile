@@ -20,7 +20,7 @@ RUN go build -o /repl/worker
 FROM ubuntu:22.04
 
 # Copy the Go binary from the builder stage
-COPY --from=builder /repl/worker /repl/workerz
+COPY --from=builder /repl/worker /repl/worker
 
 # Set the working directory to /root
 WORKDIR /root

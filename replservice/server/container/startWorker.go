@@ -6,7 +6,7 @@ import (
 	"os/exec"
 )
 
-func  StartWorker(replID string) error {
+func  StartWorker(replID string, replName string) error {
 
     volumeName := fmt.Sprintf("venv-volume-%s", replID)
     containerName := fmt.Sprintf("worker-%s", replID)
@@ -18,7 +18,8 @@ func  StartWorker(replID string) error {
         "--network=repl-network",
         "--name", containerName,
         "-e", fmt.Sprintf("REPL_ID=%s", replID),
-        "-v", fmt.Sprintf("%s:/root/venv", volumeName),
+        "-e", fmt.Sprintf("PROJECT_DIR=/root/.venv/%s", replName),
+        "-v", fmt.Sprintf("%s:/root/.venv", volumeName),
         imageName,
     )
 
@@ -31,4 +32,4 @@ func  StartWorker(replID string) error {
 	// Print the container ID
 	log.Printf("Started worker container with ID: %s", string(output))
 	return nil
-}
+} 

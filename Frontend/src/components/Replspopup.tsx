@@ -75,6 +75,10 @@ const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 
 	const configcheck = () => {
 
+		if(!user){
+			return
+		}
+
 		if (replNameRef.current === null) {
 			return;
 		}
