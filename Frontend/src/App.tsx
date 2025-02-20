@@ -28,8 +28,12 @@ function App() {
 				});
 				setUser(response.data.user);
 				setRepls(response.data.repls);
-			} catch (error) {
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			} catch (error : any) {
 				console.error("Error fetching user info:", error);
+				if (error.response.status == 401) {
+					localStorage.removeItem("access_token");
+				}
 			} finally {
 				setIsFetching(false);
 			}

@@ -71,14 +71,14 @@ func AddUser(user User) (usernameORid string,userExist bool,err error) {
 
     // Creating user in SQLDB using Prisma client
     createdUser, err := sqldb.User.CreateOne(
+		db.User.ID.Set(user.ID),
         db.User.Mongouserid.Set(user.MongoUserId),
         db.User.Username.Set(user.Username),
         db.User.Email.Set(user.Email),
+        db.User.Password.Set(user.Password),
+        db.User.Token.Set(user.RefreshToken), 
 		db.User.CreatedAt.Set(time.Now()),
 		db.User.UpdatedAt.Set(time.Now()),
-		db.User.ID.Set(user.ID),
-        db.User.Password.Set(user.Password),
-        db.User.Token.Set(user.RefreshToken),
     ).Exec(ctx)
     if err != nil {
         return "", false, fmt.Errorf("failed to insert user: %v", err)

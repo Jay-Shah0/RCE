@@ -15,7 +15,7 @@ const Replspage : React.FC = () => {
     };
 
   return (
-		<div className="relative h-screen">
+		<div className="relative h-screen w-screen">
 			<Header toggleSidebar={toggleSidebar} />
 			<div className="relative h-[90vh]">
 				<div className="h-full w-fit absolute">

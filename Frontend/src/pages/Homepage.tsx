@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -20,7 +20,7 @@ const Homepage: React.FC = () => {
 	};
 
 	return (
-		<div className="relative h-screen">
+		<div className="relative h-screen w-screen">
 			<Header toggleSidebar={toggleSidebar} />
 			<div className="relative h-[90vh]">
 				<div className="h-full w-fit absolute">
@@ -40,23 +40,20 @@ const Homepage: React.FC = () => {
 								<FontAwesomeIcon icon={faPlus} className="mr-2" />
 								Create Repl
 							</button>
-							<a
-								href="#"
-								className={
-									"w-60 px-4 border-2 mb-2 flex justify-center items-center"
-								}
+							<button
+								className="w-60 px-4 border-2 border-white mb-2 bg-inherit hover:bg-black"
+								onClick={() => setReplPopup(true)}
 							>
 								Create Python
-							</a>
-							<a
-								href="#"
-								className={
-									"w-60 px-4 border-2 mb-2 flex justify-center items-center"
-								}
+							</button>
+							<button
+								className="w-60 px-4 border-2 border-white mb-2 bg-inherit hover:bg-black"
+								onClick={() => setReplPopup(true)}
 							>
 								Create Javascript
-							</a>
+							</button>
 						</div>
+
 						<div className="py-4 flex justify-between">
 							<div className="text-2xl">Recent Repls</div>
 							<Dropdown />

@@ -26,14 +26,16 @@ type Event struct {
 type TerminalEvent struct {
 	TermID string `json:"termId"`
 	Action string `json:"action"`
-	Cmd string `json:"cmd"`
+	Cmd    string `json:"cmd,omitempty"`
+	Rows   int    `json:"rows,omitempty"`
+	Cols   int    `json:"cols,omitempty"`
 }
 
 type FileEvent struct {
 	Action   string   `json:"action"`
     FilePath string   `json:"filePath,omitempty"`
 	IsDir bool   `json:"isDir"`
-    Chunks   []string `json:"chunks,omitempty"`
+    Chunk   string `json:"chunk,omitempty"`
 }
 
 type FileTreeInfo struct {
@@ -50,14 +52,19 @@ type FileReturnMessage struct {
 
 type FileReadMessage struct {
 	Event string `json:"event"`
-	Data string `json:"data"`
-	Chunk string `json:"chunk"`
+	DataType string `json:"dataType"`
+	Chunk string `json:"chunk,omitempty"`
 }
 
 type TerminalInstance struct {
 	Cmd  *exec.Cmd
 	Pty  *os.File
 }
+
+var fileChunks = struct {
+    sync.RWMutex
+    chunks map[string][]string
+}{chunks: make(map[string][]string)}
 
 var terminals = make(map[string]*TerminalInstance)
 var mu sync.Mutex
@@ -143,7 +150,15 @@ func terminalHandler(ws *websocket.Conn, event TerminalEvent) ( error) {
 	switch event.Action {
 	case "start":
 		if !exists {
+			projectDir := os.Getenv("PROJECT_DIR")
+			if projectDir == "" {
+				log.Printf("PROJECT_DIR environment variable is not set")
+				projectDir = "/root"
+			}
+
 			cmd := exec.Command("bash")
+			cmd.Dir = projectDir
+
 			ptmx, err := pty.Start(cmd)
 			if err != nil {
 				log.Println("Error starting pty:", err)
@@ -164,10 +179,16 @@ func terminalHandler(ws *websocket.Conn, event TerminalEvent) ( error) {
 						log.Println("Error reading from pty:", err)
 						break
 					}
+
+					output :=string(buf[:n])
+					// output = strings.ReplaceAll(output, "\r", "")
+					// output = strings.ReplaceAll(output, "\n", "")
+					// output = output + "\n"
+
 					message := map[string]string{
 						"event": "term",
 						"id": termID,
-						"output": string(buf[:n]),
+						"output": output,
 					}
 					if err := ws.WriteJSON(message); err != nil {
 						log.Println("Error writing to websocket:", err)
@@ -175,6 +196,10 @@ func terminalHandler(ws *websocket.Conn, event TerminalEvent) ( error) {
 					}
 				}
 			}(event.TermID)
+		}
+	case "resize":	
+		if exists {
+			pty.Setsize(instance.Pty, &pty.Winsize{Cols: uint16(event.Cols), Rows: uint16(event.Rows)})
 		}
 	case "cmd":
 		if exists {
@@ -217,9 +242,13 @@ func fileHandler(ws *websocket.Conn, event FileEvent) ( error) {
 	case "read" :
 		err := readFile(ws, event.FilePath)
 		return err
-	case "write" :
-		err := writeFile(ws, event.FilePath, event.Chunks)
+	case "writeEnd" :
+		err := writeFile(ws, event.FilePath)
 		return err
+	case "write" :
+		fileChunks.Lock()
+		fileChunks.chunks[event.FilePath] = append(fileChunks.chunks[event.FilePath], event.Chunk)
+		fileChunks.Unlock()
 	case "create" :
 		err := createFileOrDir(ws, event.FilePath, event.IsDir)
 		return err
@@ -229,7 +258,6 @@ func fileHandler(ws *websocket.Conn, event FileEvent) ( error) {
 	}
 	return nil;
 }
-
 
 func openFileTree(ws *websocket.Conn) (err error) {
 
@@ -295,14 +323,13 @@ func openFileTree(ws *websocket.Conn) (err error) {
     return nil
 }
 
-
 func readFile(ws *websocket.Conn, filePath string) ( error){
 	var message FileReadMessage
 	message.Event = "file"
 	
     file, err := os.Open(filePath)
     if err != nil {
-		message.Data = "error"
+		message.DataType = "error"
 		message.Chunk = err.Error()
         ws.WriteJSON(message)
         return err
@@ -313,7 +340,7 @@ func readFile(ws *websocket.Conn, filePath string) ( error){
     for {
         n, err := file.Read(buffer)
         if err != nil && err != io.EOF {
-			message.Data = "error"
+			message.DataType = "error"
 			message.Chunk = err.Error()
             ws.WriteJSON(message)
             return err
@@ -321,11 +348,11 @@ func readFile(ws *websocket.Conn, filePath string) ( error){
         if n == 0 {
             break
         }
-		message.Data = "fileChunk"
+		message.DataType = "fileChunk"
 		message.Chunk = string(buffer[:n])
         ws.WriteJSON(message)
     }
-	message.Data = "fileEnd"
+	message.DataType = "fileEnd"
 	message.Chunk = ""
 
     ws.WriteJSON(message)
@@ -333,9 +360,21 @@ func readFile(ws *websocket.Conn, filePath string) ( error){
 	return nil
 }
 
-func writeFile(ws *websocket.Conn, filePath string, chunks []string) ( error) {
+func writeFile(ws *websocket.Conn, filePath string) ( error) {
 	var message FileReturnMessage
 	message.Event = "file"
+
+	 fileChunks.RLock()
+    chunks, ok := fileChunks.chunks[filePath]
+    fileChunks.RUnlock()
+
+	if !ok {
+        err := fmt.Errorf("no chunks found for file: %s", filePath)
+        message.DataType = "error"
+		message.Data = err.Error()
+		ws.WriteJSON(message)
+        return err
+    }
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
         message.DataType = "error"
@@ -353,6 +392,8 @@ func writeFile(ws *websocket.Conn, filePath string, chunks []string) ( error) {
     }
     defer file.Close()
 
+
+
     for _, chunk := range chunks {
         _, err := file.Write([]byte(chunk))
         if err != nil {
@@ -365,6 +406,10 @@ func writeFile(ws *websocket.Conn, filePath string, chunks []string) ( error) {
 	message.DataType = "success"
 	message.Data = ""
     ws.WriteJSON(message)
+
+	fileChunks.Lock()
+    delete(fileChunks.chunks, filePath)
+    fileChunks.Unlock()
 
 	return nil
 }
@@ -405,7 +450,6 @@ func createFileOrDir(ws *websocket.Conn, path string, isDir bool) error {
 
     return nil
 }
-
 
 func deleteFile(ws *websocket.Conn, filePath string) ( error ) {
 	var message FileReturnMessage

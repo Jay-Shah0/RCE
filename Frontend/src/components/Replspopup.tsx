@@ -13,7 +13,7 @@ import { ReplsContext, ReplsContextState } from '@/context/ReplsContext';
 import { useNavigate } from 'react-router-dom';
 
 interface popupProps {
-  onClose: () => void;
+	replTemplate: string;
 }
 
 interface Template {
@@ -22,16 +22,16 @@ interface Template {
 	details: string;
 }
 
-const Replspopup: React.FC<popupProps> = ({ onClose }) => {
+const Replspopup: React.FC<popupProps> = ({ replTemplate }) => {
 	const navigate = useNavigate();
 	const replNameRef = useRef<HTMLInputElement>(null);
 
 	const { user } = useContext(UserContext);
-	const { setGitPopup } = useContext(PopupContext);
+	const { setGitPopup,setReplPopup } = useContext(PopupContext);
 	const { repls, setRepls } = useContext<ReplsContextState>(ReplsContext);
 
 
-	const [searchTerm, setSearchTerm] = useState<string>("");
+	const [searchTerm, setSearchTerm] = useState<string>(replTemplate);
 	const [templates, setTemplates] = useState<Template[]>([]);
 	const [filteredTemplates, setFilteredTemplates] = useState<Template[]>([]);
 	const [showTemplates, setShowTemplates] = useState<boolean>(false);
@@ -180,7 +180,7 @@ const Replspopup: React.FC<popupProps> = ({ onClose }) => {
 						</button>
 						<button
 							className=" size-6 ml-3 mb-5 justify-center rounded hover:bg-gray-700"
-							onClick={onClose}
+							onClick={() => setReplPopup(false)}
 						>
 							<FontAwesomeIcon icon={faTimes} className="text-2xl" />
 						</button>

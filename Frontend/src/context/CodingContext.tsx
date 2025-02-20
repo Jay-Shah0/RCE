@@ -4,19 +4,26 @@ import React, { createContext, useEffect, useState, ReactNode, useRef } from "re
 interface WebSocketContextProps {
 	socket: WebSocket | null;
 	workerStart: boolean;
+	selectedFileContent: string | null;
+	setSelectedFileContent: React.Dispatch<React.SetStateAction<string | null>>;
+	selectedFileName: string | null;
+	setSelectedFileName: React.Dispatch<React.SetStateAction<string | null>>;
 }
 
-const WebSocketContext = createContext<WebSocketContextProps | undefined>(
+const CodingContext = createContext<WebSocketContextProps | undefined>(
 	undefined
 );
 
-export const WebSocketProvider: React.FC<{
+export const CodingContextProvider: React.FC<{
 	replId: string;
 	children: ReactNode;
 }> = ({ children, replId }) => {
 
 	const [socket, setSocket] = useState<WebSocket | null>(null);
-	const [workerStart, setWorkerStart] = useState<boolean>(false)
+	const [workerStart, setWorkerStart] = useState<boolean>(false);
+	const [selectedFileName, setSelectedFileName] = useState<string | null>(null);
+	const [selectedFileContent, setSelectedFileContent] = useState<string | null>(null);
+
 	const isRender = useRef(false);
 
 	const startWorker = async (id: string) => {
@@ -118,10 +125,19 @@ export const WebSocketProvider: React.FC<{
 	}, []);
 
 	return (
-		<WebSocketContext.Provider value={{ socket, workerStart }}>
+		<CodingContext.Provider
+			value={{
+				socket,
+				workerStart,
+				selectedFileName,
+				setSelectedFileName,
+				selectedFileContent,
+				setSelectedFileContent,
+			}}
+		>
 			{children}
-		</WebSocketContext.Provider>
+		</CodingContext.Provider>
 	);
 };
 
-export default WebSocketContext;
+export default CodingContext;

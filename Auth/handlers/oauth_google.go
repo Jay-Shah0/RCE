@@ -70,6 +70,8 @@ func oauthGoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	frontend_URL := getFrontendURL(r)
+
 	if (UserExist) {
 		username := id;
 
@@ -80,19 +82,23 @@ func oauthGoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to generate access token", http.StatusInternalServerError)
 			return
 		}
+		
+		frontendDomain := frontend_URL[:len(frontend_URL)-1] // Remove the last character
 
 		cookie := &http.Cookie{
         Name:     "access_token",
-        Value:    accessToken,
+        Value:    accessToken,	
         Path:     "/",
+		Domain:   frontendDomain,  
+		HttpOnly: false,                        
+		Secure:   true,                          
+		SameSite: http.SameSiteNoneMode,
     	}
 
 		http.SetCookie(w, cookie)
-
-		redirectURL := getFrontendURL(r)
-		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, frontend_URL, http.StatusPermanentRedirect)
 	}else{
-		redirectURL := getFrontendURL(r) + "User/user?id=" + url.QueryEscape(id)
+		redirectURL := frontend_URL + "User/user?id=" + url.QueryEscape(id)
 		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 	}
 }

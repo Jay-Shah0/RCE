@@ -15,7 +15,7 @@ export interface Repls extends Array<Repl> {}
 
 export interface ReplsContextState {
 	repls: Repls | null;
-	setRepls: (repls: Repls | null) => void;
+	setRepls: React.Dispatch<React.SetStateAction<Repls | null>>;
 }
 
 export const ReplsContext = React.createContext<ReplsContextState>({

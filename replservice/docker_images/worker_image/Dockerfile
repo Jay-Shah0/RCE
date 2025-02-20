@@ -17,7 +17,7 @@ COPY . .
 RUN go build -o /repl/worker
 
 # Stage 2: Create a minimal image with the Go binary
-FROM ubuntu:22.04
+FROM ubuntu:latest
 
 # Copy the Go binary from the builder stage
 COPY --from=builder /repl/worker /repl/worker

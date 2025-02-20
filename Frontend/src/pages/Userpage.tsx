@@ -35,7 +35,7 @@ const Userpage: React.FC = () => {
 	};
 
 	return (
-		<div className="relative h-screen">
+		<div className="relative h-screen w-screen">
 			<Header toggleSidebar={toggleSidebar} />
 			<div className="relative h-[90vh]">
 				<div className="h-full w-fit absolute">
@@ -51,17 +51,18 @@ const Userpage: React.FC = () => {
 							{user ? (
 								<div className="flex flex-col md:flex-row mt-4 gap-x-10">
 									<div className="w-full md:w-1/3 mb-4 md:mb-0">
-										<div className="relative w-full h-100 bg-gray-300 rounded-xl">
+										<div className="relative w-full h-50 bg-gray-300 rounded-xl">
 											{/* Banner Image */}
 											<img
-												src="https://via.placeholder.com/600x200"
-												alt="Banner"
+												src="https://dummyimage.com/1584x396/808080/808080.png"
+												alt="Profile Banner"
 												className="object-cover w-full h-full rounded-xl"
 											/>
+
 											{/* Profile Image */}
 											<div className="absolute inset-0 flex justify-start items-end pl-4">
 												<img
-													src="https://via.placeholder.com/100"
+													src="https://dummyimage.com/100x100/000000/000000.png"
 													alt="Profile"
 													className="w-24 h-24 rounded-full border-4 border-white -mb-12"
 												/>

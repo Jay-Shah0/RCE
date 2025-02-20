@@ -8,7 +8,7 @@ export interface User {
 
 export interface UserContextState {
 	user: User | null;
-	setUser: (user: User | null) => void;
+	setUser: React.Dispatch<React.SetStateAction<User | null>>;
 }
 
 export const UserContext = React.createContext<UserContextState>({

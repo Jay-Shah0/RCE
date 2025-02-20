@@ -1,58 +1,49 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import CodingArea from "@/components/Codingpage/CodingArea";
 import CodingHeader from "@/components/Codingpage/CodingHeader";
 import FileExplorer from "@/components/Codingpage/FileExplorer";
 import Tabs from "@/components/Codingpage/Tabs";
-import { WebSocketProvider } from "@/context/WebSocketContext";
 import { useLocation } from "react-router-dom";
-import { useWebSocket } from "@/hooks/useWebSocket";
 import { FileNode, FileTreeSocketMessage, TermSocketMessage } from "@/utils/socketEventInterface";
+import { CodingContextProvider } from "@/context/CodingContext";
+import { useCoding } from "@/hooks/useCoding";
 
 const CodingpageContent: React.FC = () => {
-	const { workerStart, socket } = useWebSocket();
+	const { workerStart, socket, setSelectedFileContent } = useCoding();
+
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 	const [termMsg, setTermMsg] = useState<TermSocketMessage | null>(null);
 	const [fileTree, setFileTree] = useState<FileNode[] | null>(null);
+	const [allChunks, setAllChunks] = useState<string[]>([]);
+	const chunks = useRef<string[]>([])
 
-	const [selectedFileContent, setSelectedFileContent] = useState<string>(
-		"Initial file content..."
-	);
-	const [selectedFileName, setSelectedFileName] =
-		useState<string>("example.txt");
-
-	const handleContentChange = (newContent: string) => {
-		setSelectedFileContent(newContent);
-	};
 
 	function buildFileTree(fileInfo: FileTreeSocketMessage[]): FileNode[] {
 		// Helper function to find or create a node in the tree
 		const findOrCreateNode = (nodes: FileNode[], name: string): FileNode => {
 			let node = nodes.find((n) => n.name === name);
 			if (!node) {
-				node = { name, children: undefined }; // Set children to undefined for files
+				node = { name, children: undefined }; 
 				nodes.push(node);
 			}
 			return node;
 		};
 
-		// Create a root node array to hold the structure
 		const root: FileNode[] = [];
 
 		fileInfo.forEach((info) => {
-			const parts = info.path.split("/"); // Split the path into parts
+			const parts = info.path.split("/"); 
 			let currentLevel = root;
 
 			parts.forEach((part, index) => {
 				const isLast = index === parts.length - 1;
 
-				// Find or create the current node
 				const node = findOrCreateNode(currentLevel, part);
 
 				if (isLast) {
-					node.name = info.name; // Ensure the name is set correctly
+					node.name = info.name; 
 				}
 
-				// If it's a directory and not the last part, navigate deeper
 				if (!isLast) {
 					if (!node.children) {
 						node.children = [];
@@ -64,7 +55,6 @@ const CodingpageContent: React.FC = () => {
 
 		return root;
 	}
-
 	
 	useEffect(() => {
 		if (socket && workerStart) {
@@ -83,6 +73,25 @@ const CodingpageContent: React.FC = () => {
 							setFileTree(buildFileTree(files));
 							console.log(buildFileTree(files));
 						}
+						if (data.event === "file") {
+							if (data.dataType === "error") {
+								if (data.chunk) {
+									console.log(data.chunk);
+								}
+								if (data.data) {
+									console.log(data.data);
+								}
+							}
+							if (data.dataType === "fileChunk") {
+								chunks.current = [...chunks.current, data.chunk];
+							}
+							if (data.dataType === "fileEnd") {
+								setSelectedFileContent(chunks.current.join(""));
+								console.log(chunks.current.join(""));
+								chunks.current = []
+							}
+
+						}
 					} else {
 						console.error("Invalid data received:", data);
 					}
@@ -99,14 +108,15 @@ const CodingpageContent: React.FC = () => {
 		}
 	}, [socket, workerStart]);
 
+
 	if (!socket || !workerStart || !fileTree) {
 		return <div>Loading data...</div>;
 	}
 
 	return (
-		<div className="relative h-screen">
+		<div className="relative h-screen w-screen">
 			<CodingHeader toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
-			<div className="relative h-[90vh]">
+			<div className="relative h-[90vh] w-full">
 				<div className="absolute h-full w-64">
 					<FileExplorer initialTree={fileTree} isOpen={isSidebarOpen} />
 				</div>
@@ -117,9 +127,6 @@ const CodingpageContent: React.FC = () => {
 				>
 					<div className="h-full w-3/5">
 						<CodingArea
-							fileContent={selectedFileContent}
-							fileName={selectedFileName}
-							onContentChange={handleContentChange}
 						/>
 					</div>
 					<div className="h-full w-2/5">
@@ -146,9 +153,9 @@ const Codingpage: React.FC = () => {
 	}
 
 	return (
-		<WebSocketProvider replId={replId}>
+		<CodingContextProvider replId={replId}>
 			<CodingpageContent />
-		</WebSocketProvider>
+		</CodingContextProvider>
 	);
 };
 

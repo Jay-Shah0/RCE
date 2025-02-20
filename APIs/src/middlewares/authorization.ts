@@ -1,4 +1,4 @@
-import { RequestWithUser } from './../types/user';
+import { RequestWithUser } from "../types/user";
 import { Request, Response, NextFunction } from "express";
 import axios from "axios";
 import { ApiError } from "./errorHandler";
@@ -22,9 +22,9 @@ const authenticateJWT = async (
 			headers,
 		});
 
-		const { sqlId,mongoId } = response.data;
+		const { sqlId, mongoId } = response.data;
 
-		req.body.user = { sqlId,mongoId };
+		req.body.user = { sqlId, mongoId };
 		next();
 	} catch (err) {
 		next(new ApiError(403, "Invalid token."));

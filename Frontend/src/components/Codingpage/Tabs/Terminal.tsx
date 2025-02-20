@@ -1,4 +1,4 @@
-import { useWebSocket } from "@/hooks/useWebSocket";
+import { useCoding } from "@/hooks/useCoding";
 import React, { useEffect, useRef } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
@@ -13,7 +13,7 @@ const TerminalComponent: React.FC<TerminalComponentProps> = ({
 	termId,
 	data,
 }) => {
-	const { socket } = useWebSocket();
+	const { socket } = useCoding();
 	const terminalRef = useRef<HTMLDivElement | null>(null);
 	const terminalInstance = useRef<Terminal | null>(null);
 
@@ -27,9 +27,17 @@ const TerminalComponent: React.FC<TerminalComponentProps> = ({
 		socket.send(message);
 	};
 
-	useEffect(() => {
-		if (!socket || terminalInstance.current) return;
+	const sendResizeEvent = (rows: number, cols: number) => {
+		if (!socket) return;
 
+		const message = JSON.stringify({
+			event: "term",
+			data: { termId: termId, action: "resize", rows: rows, cols: cols },
+		});
+		socket.send(message);
+	};
+
+	useEffect(() => {
 		const terminal = new Terminal();
 		const fitAddon = new FitAddon();
 		terminal.loadAddon(fitAddon);
@@ -38,6 +46,9 @@ const TerminalComponent: React.FC<TerminalComponentProps> = ({
 			terminal.open(terminalRef.current);
 			fitAddon.fit();
 			terminalInstance.current = terminal;
+
+			const { cols, rows } = terminal;
+			sendResizeEvent(cols, rows);
 		}
 
 		sendEvent("start", null);
@@ -46,6 +57,21 @@ const TerminalComponent: React.FC<TerminalComponentProps> = ({
 			console.log("Terminal input:", data);
 			sendEvent("cmd", data);
 		});
+
+		const handleResize = () => {
+			fitAddon.fit();
+			if (terminalInstance.current) {
+				const { cols, rows } = terminalInstance.current;
+				sendResizeEvent(cols, rows);
+			}
+		};
+		window.addEventListener("resize", handleResize);
+
+		return () => {
+			window.removeEventListener("resize", handleResize);
+			terminal.dispose();
+			terminalInstance.current = null;
+		};
 	}, [socket, termId]);
 
 	useEffect(() => {
@@ -56,11 +82,10 @@ const TerminalComponent: React.FC<TerminalComponentProps> = ({
 	}, [data]);
 
 	return (
-		<div className="w-full h-screen bg-black text-white">
-			<div ref={terminalRef} className="h-full" />
+		<div className="w-full bg-black text-white flex flex-col h-full">
+			<div ref={terminalRef} className="flex-grow h-full" />
 		</div>
 	);
 };
 
 export default TerminalComponent;
-	

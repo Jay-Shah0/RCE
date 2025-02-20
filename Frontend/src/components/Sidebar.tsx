@@ -100,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
 					</div>
 				</div>
 			</div>
-			{replPopup && <Replspopup onClose={() => setReplPopup(false)} />}
+			{replPopup && <Replspopup replTemplate="" />}
 			{gitPopup && <Githubpopup onClose={() => setGitPopup(false)} />}
 		</>
 	);
