@@ -32,24 +32,33 @@ func oauthGoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func oauthGoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
+	// Read redirectURL from Referer header	
+	redirectURL, _, err := getFrontendInfo(r)
+
+	if err != nil {
+		log.Println("Error reading frontend info:", err)
+		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
+		return
+	}
+
 	// Read oauthState from Cookie
 	oauthState, err := r.Cookie("oauthstate")
 	if err != nil {
 		log.Println("Error reading oauthState cookie:", err)
-		http.Redirect(w, r, getFrontendURL(r), http.StatusTemporaryRedirect)
+		http.Redirect(w, r,redirectURL, http.StatusTemporaryRedirect)
 		return
 	}
 
 	if r.FormValue("state") != oauthState.Value {
 		log.Println("Invalid oauth google state")
-		http.Redirect(w, r, getFrontendURL(r), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 		return
 	}
 
 	data, err := getUserDataFromGoogle(r.FormValue("code"))
 	if err != nil {
 		log.Println("Error getting user data from Google:", err)
-		http.Redirect(w, r, getFrontendURL(r), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -59,20 +68,18 @@ func oauthGoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Println("error making User type:", err)
-		http.Redirect(w, r, getFrontendURL(r), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 		return
 	}
 
 	id,UserExist,err := AddUser(*user)
 	if err != nil {
 		log.Println("error inserting user in database:", err)
-		http.Redirect(w, r, getFrontendURL(r), http.StatusTemporaryRedirect)
+		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 		return
 	}
 
-	frontend_URL := getFrontendURL(r)
-
-	if (UserExist) {
+	if UserExist {
 		username := id;
 
 		accessTokenExpiration := time.Now().Add(24 * time.Hour)
@@ -82,23 +89,21 @@ func oauthGoogleCallbackHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to generate access token", http.StatusInternalServerError)
 			return
 		}
-		
-		frontendDomain := frontend_URL[:len(frontend_URL)-1] // Remove the last character
-
+			
 		cookie := &http.Cookie{
-        Name:     "access_token",
-        Value:    accessToken,	
-        Path:     "/",
-		Domain:   frontendDomain,  
-		HttpOnly: false,                        
-		Secure:   true,                          
-		SameSite: http.SameSiteNoneMode,
-    	}
+			Name:     "access_token",
+			Value:    accessToken,
+			Path:     "/",                    // Ensure cookie is available for all paths
+			Expires:  accessTokenExpiration,  // Optional: match token expiration
+			HttpOnly: false,
+			Secure:   false,                  // Set to true in production with HTTPS
+			SameSite: http.SameSiteLaxMode,
+		}
 
 		http.SetCookie(w, cookie)
-		http.Redirect(w, r, frontend_URL, http.StatusPermanentRedirect)
+		http.Redirect(w, r, redirectURL, http.StatusPermanentRedirect)
 	}else{
-		redirectURL := frontend_URL + "User/user?id=" + url.QueryEscape(id)
+		redirectURL := redirectURL + "User/user?id=" + url.QueryEscape(id)
 		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 	}
 }
@@ -138,9 +143,16 @@ func getUserDataFromGoogle(code string) ([]byte, error) {
 	return contents, nil
 }
 
-func getFrontendURL(r *http.Request) string {
-	referer := r.Header.Get("Referer")
-	return referer
+func getFrontendInfo(r *http.Request) (redirectURL, domain string, err error) {
+    referer := r.Header.Get("Referer")
+    if referer == "" {
+        return "", "", fmt.Errorf("missing Referer header")
+    }
+    u, err := url.Parse(referer)
+    if err != nil {
+        return "", "", err
+    }
+    return u.String(), u.Hostname(), nil
 }
 
 func bytetomap (data []byte) (map[string]interface{}){

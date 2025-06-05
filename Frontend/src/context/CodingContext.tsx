@@ -1,4 +1,5 @@
 import axios from "axios";
+import Cookies from "js-cookie";
 import React, { createContext, useEffect, useState, ReactNode, useRef } from "react";
 
 interface WebSocketContextProps {
@@ -25,13 +26,14 @@ export const CodingContextProvider: React.FC<{
 	const [selectedFileContent, setSelectedFileContent] = useState<string | null>(null);
 
 	const isRender = useRef(false);
+	const wsRef = useRef<WebSocket | null>(null);
 
 	const startWorker = async (id: string) => {
 		try {
-				const accessToken = localStorage.getItem("access_token");
+				const accessToken = Cookies.get("access_token");
 
 				if (!accessToken) {
-					throw new Error("Access token not found in local storage");
+					throw new Error("Access token not found in cookies");
 				}
 
 				const body: {
@@ -46,7 +48,6 @@ export const CodingContextProvider: React.FC<{
 
 				const headers = { Authorization: `Bearer ${accessToken}` };
 
-				// Send POST request using axios
 				const response = await axios.post(
 					"http://localhost:3000/api/repl/open",
 					body,
@@ -62,10 +63,10 @@ export const CodingContextProvider: React.FC<{
 
 	const stopWorker = async ( id:string ) => {
 		try {
-			const accessToken = localStorage.getItem("access_token");
+			const accessToken = Cookies.get("access_token");
 
 			if (!accessToken) {
-				throw new Error("Access token not found in local storage");
+				throw new Error("Access token not found in cookies");
 			}
 
 			const body: {
@@ -97,12 +98,14 @@ export const CodingContextProvider: React.FC<{
 	useEffect(() => {
 		if (isRender.current) return;
 		isRender.current = true;
+
 		const ws = new WebSocket("ws://localhost:8099/client");
+		wsRef.current = ws;
 
 		ws.onopen = () => {
 			console.log(`Connected to WebSocket server with replID: ${replId}`);
 			ws.send(JSON.stringify({ replId }));
-			setSocket(ws);	
+			setSocket(ws); // for use elsewhere if needed
 		};
 
 		ws.onerror = (error) => {
@@ -114,14 +117,15 @@ export const CodingContextProvider: React.FC<{
 			console.log("WebSocket connection closed:", event);
 			setSocket(null);
 		};
-		setSocket(ws);
 
-		startWorker(replId)
+		startWorker(replId);
 
 		return () => {
-			if(socket) ws.close(1000);
-			stopWorker(replId)
-		}
+			if (wsRef.current?.readyState === WebSocket.OPEN) {
+				wsRef.current.close(1000);
+			}
+			stopWorker(replId);
+		};
 	}, []);
 
 	return (

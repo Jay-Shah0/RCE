@@ -11,6 +11,7 @@ import { PopupContext } from '@/context/PopupContext';
 import { UserContext } from '@/context/UserContext';
 import { ReplsContext, ReplsContextState } from '@/context/ReplsContext';
 import { useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 interface popupProps {
 	replTemplate: string;
@@ -119,10 +120,11 @@ const Replspopup: React.FC<popupProps> = ({ replTemplate }) => {
 		isPublic: boolean
 	) => {
 		try {
-			const accessToken = localStorage.getItem("access_token");
+			const accessToken = Cookies.get("access_token");
 
 			if (!accessToken) {
-				throw new Error("Access token not found in local storage");
+				console.log("Access token not found in local storage");
+				return;
 			}
 
 			const body: {

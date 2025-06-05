@@ -19,20 +19,21 @@ function App() {
 
 	const [isFetching, setIsFetching] = useState(false); 
 
-	const fetchUser = async (accessToken: string | null) => {
-		if (accessToken && !isFetching) {
-			setIsFetching(true); 
+	const fetchUser = async (token: string) => {
+
+		if (token && !isFetching) {
+			setIsFetching(true);
 			try {
 				const response = await axios.get("http://localhost:8080/user/data", {
-					headers: { Authorization: `Bearer ${accessToken}` },
+					headers: { Authorization: `Bearer ${token}` },
 				});
 				setUser(response.data.user);
 				setRepls(response.data.repls);
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			} catch (error : any) {
+			} catch (error: any) {
 				console.error("Error fetching user info:", error);
-				if (error.response.status == 401) {
-					localStorage.removeItem("access_token");
+				if (error.response?.status === 401) {
+					Cookies.remove("access_token");
 				}
 			} finally {
 				setIsFetching(false);
@@ -41,18 +42,10 @@ function App() {
 	};
 
 	useEffect(() => {
-		let accessToken = localStorage.getItem("access_token");
-		if(!accessToken){
-			const token = Cookies.get("access_token");
-			if(token){
-				accessToken = token;
-
-				localStorage.setItem("access_token", token);
-			}
-			Cookies.remove("access_token");
-		}
+		const accessToken = Cookies.get("access_token");
 		if (accessToken && !user) {
 			fetchUser(accessToken);
+			console.log("User fetched");
 		}
 	}, []);
 

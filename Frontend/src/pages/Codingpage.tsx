@@ -14,10 +14,9 @@ const CodingpageContent: React.FC = () => {
 	const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 	const [termMsg, setTermMsg] = useState<TermSocketMessage | null>(null);
 	const [fileTree, setFileTree] = useState<FileNode[] | null>(null);
-	const [allChunks, setAllChunks] = useState<string[]>([]);
-	const chunks = useRef<string[]>([])
+	const chunks = useRef<string[]>([]);
 
-
+	// Function to build the file tree from the socket message
 	function buildFileTree(fileInfo: FileTreeSocketMessage[]): FileNode[] {
 		// Helper function to find or create a node in the tree
 		const findOrCreateNode = (nodes: FileNode[], name: string): FileNode => {
@@ -56,14 +55,15 @@ const CodingpageContent: React.FC = () => {
 		return root;
 	}
 	
+	//socket connection logic and initial file tree load
 	useEffect(() => {
 		if (socket && workerStart) {
 			socket.onmessage = (event) => {
 				try {
 					const data = JSON.parse(event.data);
 					if (data) {
-						if(data.event === "term"){
-							if(data.output !== undefined){
+						if (data.event === "term") {
+							if (data.output !== undefined) {
 								console.log("Setting termData: ", data.output);
 								setTermMsg(data);
 							}
@@ -88,9 +88,8 @@ const CodingpageContent: React.FC = () => {
 							if (data.dataType === "fileEnd") {
 								setSelectedFileContent(chunks.current.join(""));
 								console.log(chunks.current.join(""));
-								chunks.current = []
+								chunks.current = [];
 							}
-
 						}
 					} else {
 						console.error("Invalid data received:", data);
@@ -104,9 +103,9 @@ const CodingpageContent: React.FC = () => {
 				event: "filetree",
 				data: { action: "open" },
 			});
-			socket.send(message)
+			socket.send(message);
 		}
-	}, [socket, workerStart]);
+	}, [socket, workerStart, setSelectedFileContent]);
 
 
 	if (!socket || !workerStart || !fileTree) {

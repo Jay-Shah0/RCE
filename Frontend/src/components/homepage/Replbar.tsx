@@ -1,5 +1,6 @@
 import { ReplsContext, ReplsContextState } from "@/context/ReplsContext";
 import axios from "axios";
+import Cookies from "js-cookie";
 import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -17,10 +18,10 @@ const Replbar: React.FC = () => {
 
 	const handleDelete = async (id: string) => {
 		try {
-			const accessToken = localStorage.getItem("access_token");
+			const accessToken = Cookies.get("access_token");
 
 			if (!accessToken) {
-				throw new Error("Access token not found in local storage");
+				throw new Error("Access token not found in cookies");
 			}
 
 			const body: {
